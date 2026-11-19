@@ -103,6 +103,7 @@ def _assemble(DA):
     src = (f"import sys, os; sys.path[:0] = [r'{vc}/scripts', r'{T_DIR}']\n"
            "import vc_build as V, mg_nganh as N, cine as C, vc as P\n"
            "import mg_x as X, mg_bds as B, mg_dl as DL, mg_v4, mg_journey as MJ, mg\n"
+           "import mg_real as R\n"
            f"V.init(T={st['T']}, face={face}, head=r'{head}', kind='{kind}')\n"
            f"C.init(r'{DA}'); P.init(V, r'{DA}')\n# ---- scenes.py ----\n{sc}\n# ---- hết scenes ----\n"
            f"exec(open(r'{DA}/subs.py', encoding='utf-8').read())\nP.finish()\n"
@@ -460,27 +461,23 @@ def mat(a, b, nhan=None, push=False):   # cảnh mặt: tự reset zoom, nhấn 
     if push: s += f"VC.push({a + .1:.2f},1.07,{min(4, b - a - .2):.2f});"
     if nhan is not None: s += f"VC.punch({nhan},{_pack()['punch']});"
     V.J.append(s)
-def vanban(a, b, title, meta='', t=None, stamp='BAN HÀNH', head='VĂN BẢN', brand=''):   # văn bản / quyết định / dự thảo
-    t = a + .4 if t is None else t; _bg(a, b, 'inkpanel'); V.full(mg_v4().newscard(_id('nc'), a, b, t, t + 1.2, head, brand, title, meta, stamp=stamp)); V.L_full(a, b, 'NC'); _tr(a)
-def ds(a, b, items, title='', ket='', t_ket=None):   # MÀN HÌNH THÔNG TIN: items=[(chữ, t)] 3–6 · tự xoay kiểu · nhãn LƯU LẠI
-    pk = _pack(); kind = pk['ds'][ST['ds'] % len(pk['ds'])]; ST['ds'] += 1; _bg(a, b); i = _id('ds'); t_ket = t_ket or (items[-1][1] + .6)
-    if kind == 'phaply': V.full(B().phaply(i, a, b, [(x, True, t) for x, t in items], t_ket, verdict=ket, title=title or 'CẦN BIẾT'))
-    elif kind == 'hoso': V.full(B().hoso(i, a, b, [(x, 'doc', t) for x, t in items][:5], t_ket, done=ket or 'XONG', title=title))
-    else: V.full(X().stairs(i, a, b, [(x, t) for x, t in items][:5], t_ket, flag=ket))
-    V.L_full(a, b, 'DS'); _tr(a); luu(items[-1][1] + .3, b)
+def vanban(a, b, title, meta='', t=None, stamp='BAN HÀNH', head='QUYẾT ĐỊNH', brand='UBND TỈNH ĐẮK LẮK'):   # văn bản / quyết định / dự thảo (bộ chân thực)
+    t = a + .5 if t is None else t; V.full(R().vanban(_id('vb'), a, b, t, title, meta, stamp=stamp, head=head, brand=brand)); V.L_full(a, b, 'VB'); _tr(a)
+def ds(a, b, items, title='CẦN BIẾT', ket='', t_ket=None):   # MÀN HÌNH THÔNG TIN: bảng kẹp hồ sơ, tick từng ý · items=[(chữ, t)] 3–6 · nhãn LƯU LẠI
+    V.full(R().ds(_id('ds'), a, b, items, title=title, ket=ket, t_ket=t_ket)); V.L_full(a, b, 'DS'); _tr(a); luu(items[-1][1] + .3, b)
 def luu(a, b):   # nhãn nhỏ LƯU LẠI góc trên
     i = _id('luu')
     V.H.append(f'<div class="vc" id="{i}" style="left:40px;top:128px;z-index:30;padding:6px 14px;border-radius:999px;background:rgba(217,181,107,.95);color:#141414;font-family:VCB,sans-serif;font-weight:900;font-size:18px;letter-spacing:2px;opacity:0">LƯU LẠI</div>')
     V.J.append(f"tl.set('#{i}',{{opacity:0}},0);tl.to('#{i}',{{opacity:1,duration:.3}},{a:.2f});tl.set('#{i}',{{opacity:0}},{b:.2f});")
-def so(a, b, value, label='', t=None, unit=''):   # 1 con số lớn (chỉ số có trong lời)
-    t = a + .3 if t is None else t; _bg(a, b); i = _id('so')
-    if unit == '%': V.full(X().ring(i, a, b, t, float(str(value).replace(',', '.')), label, unit='%'))
-    else: V.full(mg_v4().kinetic(i, a, b, ([(label, a + .2, 40, 'w')] if label else []) + [(str(value) + (' ' + unit if unit else ''), t, 150, 'w')])); kinetic(i)
-    V.L_full(a, b, 'SO'); _tr(a)
-def hinh(a, b, fn, *args, nen=None, **kw):   # bất kỳ hình nào: P.hinh(a, b, B.chungcu, t0, t_top, label='…') — tự nền + chuyển cảnh + khung người nói
-    _bg(a, b, nen); i = _id('h'); V.full(fn(i, a, b, *args, **kw)); V.L_full(a, b, 'H'); _tr(a); return i
+def so(a, b, value, label='', t=None, unit='', title='', note='', delta=''):   # 1 con số lớn (chỉ số có trong lời)
+    t = a + .3 if t is None else t; V.full(R().so(_id('so'), a, b, t, str(value), unit, kicker=label, title=title, note=note, delta=delta)); V.L_full(a, b, 'SO'); _tr(a)
+def hinh(a, b, fn, *args, nen=None, **kw):   # bất kỳ hình nào: P.hinh(a, b, R.caotoc, t0, …) — hình bộ chân thực có nền riêng; tự chuyển cảnh + khung người nói
+    if not getattr(fn, '__module__', '').startswith('mg_real'): _bg(a, b, nen)
+    i = _id('h'); V.full(fn(i, a, b, *args, **kw)); V.L_full(a, b, 'H'); _tr(a); return i
 def sat(a, b, names=(), **kw):   # bản đồ vệ tinh: xã/phường · routes · pins
     V.full(map_ranh(_id('sat'), a, b, names, **kw)); V.L_full(a, b, 'SAT')
+def R():
+    import mg_real as m; return m
 def mg_v4():
     import mg_v4 as m; return m
 def B():
