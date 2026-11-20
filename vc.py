@@ -13,7 +13,9 @@ def sh(cmd, keep=None, tail=None, cwd=None):
     if r.returncode: print('\n'.join((r.stdout + r.stderr).splitlines()[-15:])); sys.exit(f'✖ lỗi lệnh (mã {r.returncode}): {cmd[:120]}')
 def PY(): return f'python3 -X utf8 {VC()}/scripts/vucut.py'
 
-CSS = r""".mix{row-gap:2px!important;column-gap:9px!important}.mix:not(.cardmix){width:600px!important}
+CSS = r"""#pip{border:0!important;border-radius:16px!important;box-shadow:0 0 0 1px rgba(255,255,255,.18),0 10px 28px rgba(0,0,0,.55),0 2px 6px rgba(0,0,0,.35)!important}
+#pip:after{content:"";position:absolute;left:14px;bottom:12px;width:26px;height:2px;border-radius:2px;background:#E8C27A;opacity:.9;z-index:2}
+.mix{row-gap:2px!important;column-gap:9px!important}.mix:not(.cardmix){width:600px!important}
 .mix .w{font-family:VSUB,sans-serif!important;font-weight:600!important;font-size:30px!important;line-height:1.24!important;letter-spacing:.005em;color:#F6F1E7!important;text-shadow:0 1px 2px rgba(0,0,0,.55),0 2px 10px rgba(0,0,0,.45),0 0 22px rgba(0,0,0,.25)!important}
 .mix .w.sm{font-size:24px!important;font-weight:500!important}
 .mix .s{font-size:68px!important;line-height:1.08!important;padding:.24em .1em .22em!important;margin:-.24em -.04em -.22em!important}.mix .s.xl{font-size:80px!important}
@@ -78,8 +80,44 @@ def setup(vc):
     font_css()
     sh(f'python3 -c "import faster_whisper,rembg" 2>/dev/null && node {vc}/scripts/preview.mjs --check | grep -q ok && echo "✅ sẵn sàng" || python3 -X utf8 {vc}/scripts/vucut.py setup --rembg', keep='✅|✖|lỗi|SẴN')
 
+# lỗi Whisper hay gặp ở kênh (thêm dòng mỗi khi sửa tay 1 lỗi mới) — ghi vào DA/sua_chinh_ta.tsv trước phiên âm, transcribe tự áp
+SUA = """bó đồng sản	bất động sản
+bóng đồng sản	bất động sản
+bất đồng sản	bất động sản
+bong sản	bất động sản
+đắt lắc	Đắk Lắk
+đắc lắt	Đắk Lắk
+quy hạch	quy hoạch
+quy hoặc	quy hoạch
+tích lĩ	tích lũy
+tích lủy	tích lũy
+bình vững	bền vững
+điểm nghẻng	điểm nghẽn
+sinh họt	sinh hoạt
+tổ án riêng	tổ ấm riêng
+ngay càng	ngày càng
+bay vốn	vay vốn
+gia bán	giá bán
+tuyền thế nha	tiền thuê nhà
+tiền thế nhà	tiền thuê nhà
+hòn thành	hoàn thành
+bài tỏa	bài toán
+đại nhân tiến độ	đẩy nhanh tiến độ
+nhà ở xả hội	nhà ở xã hội
+theo vũ	Theo Vũ
+vũ cho rằng	Vũ cho rằng
+follow vũ	Follow Vũ
+phồ lâu vũ	Follow Vũ
+hạ tần	hạ tầng
+cao tốt	cao tốc
+giải phóng mặt bằn	giải phóng mặt bằng
+"""
+def _sua(DA):
+    os.makedirs(DA, exist_ok=True); f = os.path.join(DA, 'sua_chinh_ta.tsv')
+    old = open(f, encoding='utf-8').read() if os.path.exists(f) else ''
+    open(f, 'w', encoding='utf-8').write(old + ''.join(l + '\n' for l in SUA.strip().splitlines() if l not in old))
 def go(video, DA, *a):
-    DA = os.path.abspath(os.path.expanduser(DA))
+    DA = os.path.abspath(os.path.expanduser(DA)); _sua(DA)
     sh(f'{PY()} prep "{video}" {DA}' + (' --clip 0-30' if 'thu' in a else ''), keep='✅|tự sửa|✖')
     for c in _chunks(_load(DA, False), 14): print(f"{c[0]['start']:6.2f}  " + ' '.join(w['word'] for w in c))
 
@@ -95,6 +133,26 @@ def cut(DA, *a):
     for c in _chunks(_load(DA)):
         tk = [f"[g:{w['word']}]" if re.search(r'\d', w['word']) else w['word'] for w in c]
         print(f"  {c[0]['start']:6.2f}  {' '.join(tk)}")
+    diadanh(DA)
+
+# địa danh cấp xã/phường KHÔNG trùng nghĩa thường (lọc khi dò tự động)
+DD_BO = set()
+def diadanh(DA):   # vc.py diadanh DA — dò tên xã/phường Đắk Lắk (102 đơn vị 2025) trong lời → giây nhắc + dòng P.sat gợi ý
+    DA = os.path.abspath(os.path.expanduser(DA)); W = _load(DA); D = _ranh_data()['xa']
+    tok = [(_plain(x).strip(',.?!:;"“”'), w['start']) for w in W for x in w['word'].split()]
+    hits = {}
+    for k, v in D.items():
+        n = _plain(v['ten']).split()
+        if len(n) < 2 or v['ten'] in DD_BO: continue
+        for q in range(len(tok) - len(n) + 1):
+            if [t for t, _ in tok[q:q + len(n)]] == n: hits.setdefault(v['ten'], []).append(tok[q][1])
+    tinh = [tok[q][1] for q in range(len(tok) - 1) if [t for t, _ in tok[q:q + 2]] == ['dak', 'lak'] and not (q > 1 and [t for t, _ in tok[q - 2:q]] == ['lien', 'son'])]
+    if tinh: hits.setdefault('Đắk Lắk', tinh)   # nói chung cả tỉnh → bản đồ ranh giới tỉnh (anh duyệt 20/11/2026)
+    if not hits:
+        print('ĐỊA DANH: không nhắc địa phương nào của Đắk Lắk'); return
+    print('ĐỊA DANH được nhắc (mỗi nơi 1 bản đồ vệ tinh ở lần nhắc đầu hoặc đoạn nói kỹ về nơi đó; Đắk Lắk = ranh giới cả tỉnh; cảnh bắt đầu ≥ 1.2 s trước giây nhắc):')
+    for ten, ts in sorted(hits.items(), key=lambda x: x[1][0]):
+        t = ts[0]; print(f"  {t:6.2f}  {ten}  (nhắc {len(ts)} lần: {', '.join(f'{x:.1f}' for x in ts[:6])})  →  P.sat({max(0, t - 1.4):.2f}, {max(t + 1.8, max(0, t - 1.4) + 2.8):.2f}, '{ten}', t_draw={max(t, max(0, t - 1.4) + 1.2):.2f})")
 
 def _assemble(DA):
     st = json.load(open(os.path.join(DA, 'state.json'))); sc = open(os.path.join(DA, 'scenes.py'), encoding='utf-8').read()
@@ -128,12 +186,87 @@ def _cuts(DA):
     src = open(os.path.join(DA, 'build.py'), encoding='utf-8').read()
     return sorted({float(x) for m in re.finditer(r'V\.L_(?:person|full|split|card)\(\s*([\d.]+)\s*,\s*([\d.]+)', src) for x in m.groups()})
 
+# ---------- nhạc nền theo MOOD nội dung (tự tổng hợp, không bản quyền) ----------
+MOODS = {   # hợp âm (MIDI) · gốc bass · BPM · độ sáng · mô tả
+    'sang': dict(ch=[[55, 59, 62, 67], [50, 54, 57, 62], [52, 55, 59, 64], [48, 52, 55, 60]], root=[43, 38, 40, 36], bpm=100,
+                 desc='ấm áp – hy vọng (Sol trưởng G–D–Em–C): an cư, an sinh, cơ hội, tin tích cực'),
+    'hung': dict(ch=[[50, 53, 57, 62], [46, 50, 53, 58], [48, 52, 55, 60], [45, 49, 52, 57]], root=[38, 34, 36, 33], bpm=112,
+                 desc='hùng tráng – đà phát triển (Rê thứ Dm–Bb–C–A): hạ tầng lớn, cao tốc, sân bay, vốn đầu tư'),
+    'toi':  dict(desc='điện ảnh tối, nhịp đều (mặc định cũ): rủi ro, cảnh báo, pháp lý'),
+}
+def nhac(mood='sang'):   # P.nhac('sang'|'hung'|'toi') trong scenes.py — chọn mood nhạc nền theo nội dung
+    assert mood in MOODS, f'mood: {list(MOODS)}'; json.dump({'mood': mood}, open(os.path.join(DA_, 'nhac.json'), 'w'))
+def _music(dur, impacts, mood, path):
+    import numpy as np, wave
+    from scipy.signal import butter, sosfilt
+    M = MOODS[mood]; sr = 48000; N = int(sr * dur); L = np.zeros(N); Rr = np.zeros(N); rng = np.random.default_rng(11)
+    BEAT = 60 / M['bpm']; BAR = 4 * BEAT; nb = int(dur / BAR) + 1; hz = lambda m: 440 * 2 ** ((m - 69) / 12)
+    lpf = lambda x, f: sosfilt(butter(2, f, 'low', fs=sr, output='sos'), x); hpf = lambda x, f: sosfilt(butter(2, f, 'high', fs=sr, output='sos'), x)
+    def add(x, t, gl, gr=None):
+        a = int(t * sr)
+        if a >= N or a < 0: return
+        x = x[:N - a]; L[a:a + len(x)] += gl * x; Rr[a:a + len(x)] += (gl if gr is None else gr) * x
+    imp = sorted(impacts); peak = max([t for t in imp if t > dur * .6] or [dur * .8])
+    def energy(t):   # 0.35 mở → 0.7 thân → 1.0 quanh cao trào → 0.6 kết
+        return .35 + .35 * min(1, t / 8) + .3 * math.exp(-((t - peak) / 9) ** 2)
+    for b in range(nb):   # PAD ấm (2 saw tách âm lọc thấp + sine)
+        t0 = b * BAR; d = BAR + .8; n = int(sr * d); m = np.arange(n) / sr
+        e = np.minimum(1, m / .6) * np.minimum(1, (d - m) / .8)
+        for k, q in enumerate(M['ch'][b % 4]):
+            f = hz(q); x = (2 * ((f * 1.004 * m) % 1) - 1 + 2 * ((f * .996 * m) % 1) - 1) * .5
+            x = lpf(x, 1100 if mood == 'sang' else 800) * .05 + np.sin(2 * np.pi * f * m) * .03
+            add(x * e, t0, .8 if k % 2 else .6, .6 if k % 2 else .8)
+    pat = [0, 1, 2, 3, 2, 1, 3, 2] if mood == 'sang' else [0, 2, 1, 3, 0, 2, 1, 3]
+    for b in range(nb):   # PIANO/PLUCK rải hợp âm móc 8 (vào ngay — giữ nhịp từ giây đầu)
+        for st in range(8):
+            t0 = b * BAR + st * BEAT / 2; q = M['ch'][b % 4][pat[st]] + 12; m = np.arange(int(sr * .9)) / sr; f = hz(q)
+            x = (np.sin(2 * np.pi * f * m) + .45 * np.sin(4 * np.pi * f * m) * np.exp(-m * 6) + .2 * np.sin(6 * np.pi * f * m) * np.exp(-m * 9)) * np.exp(-m * 4.5)
+            g = .07 * energy(t0) / .7; pn = .35 + .3 * (st % 2); add(x, t0, g * (1 - pn), g * pn)
+    for b in range(1, nb):   # BASS gốc: phách 1 + móc trước phách 3
+        for off, g in ((0, .26), (BEAT * 1.5, .14), (BEAT * 2, .2)):
+            t0 = b * BAR + off; m = np.arange(int(sr * BEAT * 1.2)) / sr; f = hz(M['root'][b % 4])
+            x = np.tanh(1.5 * np.sin(2 * np.pi * f * m)) * np.exp(-m * 3.5); add(x, t0, g * min(1, energy(t0) / .6))
+    def kick():
+        m = np.arange(int(sr * .35)) / sr; return np.sin(2 * np.pi * np.cumsum(48 + 75 * np.exp(-m * 32)) / sr) * np.exp(-m * 10)
+    def noise(d, hp, dec): m = np.arange(int(sr * d)) / sr; return hpf(rng.standard_normal(len(m)), hp) * np.exp(-m * dec)
+    K = kick(); SH = noise(.05, 6000, 90); SN = lpf(noise(.22, 1500, 20), 6000)
+    for b in range(2, nb):   # TRỐNG mềm, dày dần theo năng lượng
+        for qd in range(4):
+            t0 = b * BAR + qd * BEAT; e = energy(t0)
+            if qd in (0, 2) or (mood == 'hung' and e > .75): add(K, t0, .3)
+            if b >= 4:
+                for s16 in range(2): add(SH, t0 + s16 * BEAT / 2, .03 * e, .045 * e)
+            if b >= 6 and qd in (1, 3): add(SN, t0, .06 * e)
+            if mood == 'hung' and e > .8 and qd == 3: add(lpf(noise(.3, 80, 9), 300), t0 + BEAT * .5, .2)   # tom trầm
+    for t in imp:   # tại mốc lớn: riser 1.2 s trước + "bừng sáng" (cymbal + sub mềm)
+        m = np.arange(int(sr * 1.2)) / sr; rs = hpf(rng.standard_normal(len(m)), 2500) * (m / 1.2) ** 2.5; add(rs, t - 1.2, .05)
+        m = np.arange(int(sr * 2.4)) / sr; cy = hpf(rng.standard_normal(len(m)), 5000) * np.exp(-m * 2.2)
+        sb = np.sin(2 * np.pi * np.cumsum(55 + 30 * np.exp(-m * 8)) / sr) * np.exp(-m * 2.5); add(cy * .06 + sb * .22, t, 1.0)
+    x = np.stack([L, Rr], 1); fi = np.minimum(1, np.arange(N) / (sr * 1.0)); fo = np.minimum(1, (N - np.arange(N)) / (sr * 1.2))
+    x *= (fi * fo)[:, None]; x = hpf(x.T, 30).T; x = x / (np.abs(x).max() + 1e-9) * 10 ** (-1 / 20)
+    w = wave.open(path, 'wb'); w.setnchannels(2); w.setsampwidth(2); w.setframerate(sr); w.writeframes((x * 32767).astype('<i2').tobytes()); w.close()
+def _remix(DA):   # thay nhạc mặc định bằng nhạc theo mood (P.nhac), trộn lại đúng như vucut.py audio (nghẹt · tắt trước câu đắt · nhường giọng)
+    nf = os.path.join(DA, 'nhac.json'); mood = json.load(open(nf))['mood'] if os.path.exists(nf) else 'toi'
+    if mood == 'toi': return
+    j = lambda *x: os.path.join(DA, *x); plan = json.load(open(j('audio.json'), encoding='utf-8')) if os.path.exists(j('audio.json')) else {}
+    T = json.load(open(j('state.json')))['T']; _music(T, plan.get('impacts', []), mood, j('music.wav'))
+    btw = lambda W: '+'.join(f'between(t,{x},{y})' for x, y in W) or '0'; Wm, Dk = btw(plan.get('muffle', [])), btw(plan.get('duck', []))
+    fc = (f"[1:a]aresample=48000,volume=-12dB,asplit=2[mA][mB];[mA]volume='if({Wm},0,1)':eval=frame[full];"
+          f"[mB]lowpass=f=520,lowpass=f=520,volume=2dB,volume='if({Wm},1,0)':eval=frame[muff];"
+          f"[full][muff]amix=inputs=2:normalize=0,volume='if({Dk},0.03,1)':eval=frame[m];"
+          f"[2:a]pan=stereo|c0=c0|c1=c0[key];[m][key]sidechaincompress=threshold=0.15:ratio=3:attack=80:release=650:knee=6[md];"
+          f"[0:a]aresample=48000,pan=stereo|c0=c0|c1=c0[v];[v][md]amix=inputs=2:normalize=0:duration=first,alimiter=limit=0.95,loudnorm=I=-14:TP=-1.5:LRA=11[out]")
+    subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', j('voice_sfx.m4a'), '-i', j('music.wav'), '-i', j('voice.wav'), '-filter_complex', fc,
+                    '-map', '[out]', '-ar', '48000', '-c:a', 'aac', '-b:a', '256k', j('final_audio.m4a')], check=True)
+    print(f'xong → nhạc nền mood "{mood}": {MOODS[mood]["desc"]}')
+
 def out(DA):
     DA = os.path.abspath(os.path.expanduser(DA))
     for f in ('final_audio_base.m4a', 'final_audio.m4a'):
         if os.path.exists(os.path.join(DA, f)): os.remove(os.path.join(DA, f))
     sh(f'python3 {T_DIR}/cine_sfx.py sfx', cwd=DA, tail=1)
     sh(f'{PY()} audio {DA}', keep='LUFS|✖')
+    _remix(DA)
     sh(f'python3 {T_DIR}/cine_sfx.py --layer {DA}', tail=1)
     sp, dn = os.path.join(DA, 'splits.json'), os.path.join(DA, 'splits.done.json')
     s = open(sp).read() if os.path.exists(sp) else ''
@@ -156,6 +289,9 @@ def wait(DA):
         if re.search(r'Traceback|✖', L): print(L[-1500:]); sys.exit('✖ render lỗi')
         time.sleep(15)
     print('… chưa xong, chạy: vc.py wait DA  ·', (L.strip().splitlines() or [''])[-1][-80:])
+
+def xem(DA, *ts):   # vc.py xem DA 14.2 42 71.9 — chụp ĐÚNG giây từ bản dựng (trước khi xuất) → qc/grid.jpg
+    DA = os.path.abspath(os.path.expanduser(DA)); sh(f'{PY()} probe {DA} ' + ','.join(ts), keep='✖|⚠'); grid(DA, *ts)
 
 def grid(DA, *a):
     from PIL import Image
@@ -282,7 +418,11 @@ def ranh(*q):   # vc.py ranh [tên…] → tải dữ liệu (lần đầu ~1–
         m = [v['full'] for k, v in D.items() if _plain(s) in (_plain(v['ten']), _plain(v['full']), k.replace('_', ' '))] or \
             [v['full'] for k, v in D.items() if _plain(s) in _plain(v['full'])]
         print(f'{s} → ' + (' | '.join(m) if m else 'KHÔNG CÓ (xem: vc.py ranh)'))
+TINH_ALIAS = ('dak lak', 'tinh dak lak', 'tinh', 'ca tinh', 'toan tinh')
+def _dtinh():   # các xã/phường + ranh giới CẢ TỈNH Đắk Lắk (sau sáp nhập 2025, gồm Phú Yên cũ) dưới khoá '__tinh'
+    R_ = _ranh_data(); D = dict(R_['xa']); D['__tinh'] = {'ten': 'Đắk Lắk', 'full': 'Đắk Lắk', 'km2': None, 'r': R_['tinh']}; return D
 def _pick(D, s):
+    if '__tinh' in D and _plain(s) in TINH_ALIAS: return '__tinh'
     for k, v in D.items():
         if _plain(s) in (_plain(v['ten']), _plain(v['full']), k.replace('_', ' ')): return k
     sys.exit(f'✖ không có xã/phường "{s}" — tra: vc.py ranh {s}')
@@ -316,6 +456,20 @@ def _sfx_ranh(path, d=1.0):   # "vút" quét 0.1 s (0.9→14.6 kHz) + lấp lán
     x = np.concatenate([sw / np.abs(sw).max() * .8, sh / np.abs(sh).max()]); x = x / np.abs(x).max() * .89
     w = wave.open(path, 'wb'); w.setnchannels(1); w.setsampwidth(2); w.setframerate(sr); w.writeframes((x * 32767).astype('<i2').tobytes()); w.close()
 
+def _sfx_count(path, d=1.2, n=26):   # tiếng đếm số: n tiếng tách cơ khí đặt theo đều giá trị của đường expo.out (dày lúc đầu, thưa dần) + chốt "ting" sáng + đệm trầm
+    import numpy as np, wave; sr = 48000; rng = np.random.default_rng(7); L = int(sr * (d + 1.1)); x = np.zeros(L)
+    ts = [-d / 10 * math.log2(1 - k / (n + 1)) for k in range(1, n + 1)]
+    for k, t in enumerate(ts):
+        m = np.arange(int(sr * .018)) / sr; f = 2600 + 1400 * k / n
+        c = (np.sin(2 * np.pi * f * m) * .6 + rng.standard_normal(len(m)) * .4) * np.exp(-m * 380)
+        a = int(t * sr); x[a:a + len(c)] += c * (.55 + .25 * k / n)
+    te = min(d, ts[-1] + .06); m = np.arange(int(sr * 1.0)) / sr
+    bell = sum(g * np.sin(2 * np.pi * f * m) * np.exp(-m * dk) for f, g, dk in [(1568, 1, 4.5), (2352, .55, 6), (3136, .35, 8), (4704, .18, 11)])
+    th = np.sin(2 * np.pi * np.cumsum(90 + 60 * np.exp(-m * 40)) / sr) * np.exp(-m * 14) * .9
+    a = int(te * sr); seg = (bell * .7 + th)[:L - a]; x[a:a + len(seg)] += seg
+    x = x / np.abs(x).max() * .89
+    w = wave.open(path, 'wb'); w.setnchannels(1); w.setsampwidth(2); w.setframerate(sr); w.writeframes((x * 32767).astype('<i2').tobytes()); w.close()
+
 # ---------- địa điểm & tuyến đường (OSRM đi theo đường thật · Nominatim tra tên) ----------
 GEO = os.path.join(HOME, 'geo.json')
 def _geo_cache():
@@ -347,10 +501,24 @@ def _road(wps):   # tuyến theo đường thật qua các điểm
         c[key] = [[round(x, 5), round(y, 5)] for x, y in _rdp([tuple(p) for p in g], .0002)]; _geo_save(c)
     return c[key]
 
+def _tam(rings):   # tâm THỊ GIÁC của vùng (điểm trong vùng xa mép nhất — kiểu polylabel) trên khung bản đồ, tránh khung người nói góc phải dưới → (x, y, bán kính trong)
+    import numpy as np
+    seg = np.array([(r[n][0], r[n][1], r[(n + 1) % len(r)][0], r[(n + 1) % len(r)][1]) for r in rings for n in range(len(r))])
+    xs = [p[0] for r in rings for p in r]; ys = [p[1] for r in rings for p in r]
+    gx, gy = np.meshgrid(np.arange(max(80, min(xs)), min(640, max(xs)), 5.0), np.arange(max(190, min(ys)), min(630, max(ys)), 5.0))
+    px, py = gx.ravel(), gy.ravel()
+    if not len(px): return (sum(xs) / len(xs), sum(ys) / len(ys), 40)
+    x1, y1, x2, y2 = (seg[:, k][None, :] for k in range(4)); X, Y = px[:, None], py[:, None]
+    inside = (((y1 > Y) != (y2 > Y)) & (X < (x2 - x1) * (Y - y1) / (y2 - y1 + 1e-12) + x1)).sum(1) % 2 == 1
+    dx, dy = x2 - x1, y2 - y1; u = np.clip(((X - x1) * dx + (Y - y1) * dy) / (dx * dx + dy * dy + 1e-12), 0, 1)
+    d = np.hypot(X - x1 - u * dx, Y - y1 - u * dy).min(1)
+    d = np.where(inside, d, -1) - np.where((px > 470) & (py > 540), 1e4, 0)   # né khung người nói
+    k = int(d.argmax()); return float(px[k]), float(py[k]), float(max(d[k], 30))
+
 def map_ranh(i, a, b, names=(), t_draw=None, label='', sub='', km2=False, routes=(), pins=(), center=None, km=6):
     """bản đồ vệ tinh: zoom từ xa vào · xã/phường (names) viền vàng tự vẽ + vệt trắng chạy · tuyến đường (routes) xanh sáng tự vẽ · ghim (pins)
     routes=[('QUỐC LỘ 14', ['buonmathuot', 'Ea Kao'], t)] · pins=[('SÂN BAY', 'sanbaybmt', t)] · center=(điểm) km= bán kính khi không có xã"""
-    D = _ranh_data()['xa']; names = [names] if isinstance(names, str) else list(names); ks = [_pick(D, s) for s in names]
+    D = _dtinh(); names = [names] if isinstance(names, str) else list(names); ks = [_pick(D, s) for s in names]
     t_draw = max(a + 1.2, a + .35 if t_draw is None else t_draw); DR = 1.0
     RT = [(lb, _road(w), (t if t is not None else t_draw + .3 + .4 * n)) for n, (lb, w, *t_) in enumerate(routes) for t in [t_[0] if t_ else None]]
     PN = [(lb, _pt(p), (t_[0] if t_ else t_draw + .5 + .3 * n)) for n, (lb, p, *t_) in enumerate(pins)]
@@ -387,10 +555,11 @@ def map_ranh(i, a, b, names=(), t_draw=None, label='', sub='', km2=False, routes
                 f'<text x="{x:.0f}" y="{y + 6:.0f}" text-anchor="middle" font-family="VCB,sans-serif" font-weight="800" font-size="19" fill="{col}">{txt}</text></g>')
     if ks:
         allp = ''.join(path(D[k]['r']) for k in ks); L = sum(plen(r) for k in ks for r in D[k]['r'])
-        big = max((r for k in ks for r in D[k]['r']), key=len); cc = [S(*p) for p in big]; ccx = sum(x for x, _ in cc) / len(cc); ccy = sum(y for _, y in cc) / len(cc)
+        ccx, ccy, rin = _tam([[S(*p) for p in r] for k in ks for r in D[k]['r']])
         ttl = label or (D[ks[0]]['full'].upper() if len(ks) == 1 else ' · '.join(D[k]['ten'].upper() for k in ks))
         if km2 and len(ks) == 1 and D[ks[0]].get('km2'): sub = sub or f"{D[ks[0]]['km2']:g} km²"
-        fs_ = min(40, int(560 / (len(ttl) * .64))); ccx = min(max(ccx, 60 + len(ttl) * fs_ * .32), 660 - len(ttl) * fs_ * .32); ccy = min(max(ccy, 200), 600)
+        fs_ = int(max(30, min(78, 2.2 * rin / (len(ttl) * .62), .95 * rin, 600 / (len(ttl) * .64)))); hw = len(ttl) * fs_ * .32
+        ccx = min(max(ccx, 60 + hw), 660 - hw); ccy = min(max(ccy + fs_ * .35, 200), 600)   # ccy: đường chân chữ → tâm chữ đúng tâm vùng
         nlap = max(0, int((b - t_draw - DR) / lap))
         svg += (f'<path class="dim" d="M0 0H720V1280H0Z{allp}" fill="#000" fill-rule="evenodd" opacity="0"/>'
                 f'<path class="gl" d="{allp}" fill="none" stroke="#F0C460" stroke-width="16" stroke-linejoin="round" stroke-linecap="round" filter="url(#{i}g)" opacity=".85" stroke-dasharray="{L:.0f} {L:.0f}" stroke-dashoffset="{L:.0f}"/>'
@@ -461,6 +630,81 @@ def mat(a, b, nhan=None, push=False):   # cảnh mặt: tự reset zoom, nhấn 
     if push: s += f"VC.push({a + .1:.2f},1.07,{min(4, b - a - .2):.2f});"
     if nhan is not None: s += f"VC.punch({nhan},{_pack()['punch']});"
     V.J.append(s)
+NEN = {   # nền cảnh đồ hoạ (P.nen) — tối giản, sang; chữ trắng/vàng của bộ R. vẫn nổi
+    'den':  '#0d0d0f',
+    'than': 'radial-gradient(120% 75% at 28% 16%,#27221c 0%,#16130f 46%,#0a0907 100%)',
+    'dem':  'radial-gradient(120% 75% at 28% 16%,#1a2633 0%,#0f1720 48%,#070a0e 100%)',
+    'da':   'radial-gradient(85% 45% at 50% -4%,rgba(232,194,122,.13),rgba(232,194,122,0) 70%),radial-gradient(140% 90% at 50% 40%,#1c1c1f 0%,#121214 55%,#08080a 100%)',
+}
+def nen(ten='than'):   # P.nen('than'|'dem'|'da'|'den') đầu scenes.py — đổi nền mọi hình R.
+    R().BG = NEN.get(ten, ten)
+CTA_TEN, CTA_CHUC = 'Lê Phong Vũ', 'GĐDA · Tây Nguyên Investment'
+FOIL = ("background:linear-gradient(100deg,#7a5a24 0%,#c9a25a 14%,#f6e2a2 24%,#fff6d6 28%,#d9b468 38%,#8c6a2c 52%,#e8c983 64%,#fff1c2 70%,#b88f45 82%,#6e5020 100%);"
+        "background-size:240% 100%;background-position:100% 0;-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;"
+        "padding:.22em .04em .26em;margin:-.22em -.04em -.26em;filter:drop-shadow(0 1.5px 0 rgba(70,48,12,.95)) drop-shadow(0 10px 22px rgba(0,0,0,.55))")   # đệm để dấu tiếng Việt (Ị, Ũ, Ỗ) không bị cắt
+def _foil_js(sel, t, d=1.6): return f"tl.fromTo('{sel}',{{backgroundPosition:'100% 0'}},{{backgroundPosition:'0% 0',duration:{d},ease:'power2.inOut'}},{t:.2f});"
+def cta(a, b, follow, hoi=None, chu=(), ten=CTA_TEN, chuc=CTA_CHUC, nut='Follow', xong='Đã follow', hoi_txt=('ANH CHỊ', 'CÓ CÂU HỎI?')):
+    """MẪU KÊU GỌI CUỐI VIDEO — cảnh đồ hoạ nền than + khung nhân vật nhỏ, chữ NHŨ VÀNG:
+    hoi=giây câu hỏi/bình luận → chữ nhũ "ANH CHỊ / CÓ CÂU HỎI?" + bong bóng bình luận 3D đang gõ + "BÌNH LUẬN BÊN DƯỚI ↓" (hoi_txt chỉ chữ có trong lời)
+    follow=giây chữ "Follow" → chữ nhũ "FOLLOW VŨ" + thẻ kính (chữ ký V · tên · chức danh · nút Follow tự bấm → Đã follow)
+    chu=[(CHỮ, giây)] ≤3 chủ đề nói ở câu follow → từng dòng tick vàng"""
+    i = _id('cta'); R_ = R(); J = []; t1 = follow
+    gl = 'background:rgba(255,248,235,.05);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:inset 0 0 0 1px rgba(232,194,122,.28),0 18px 40px rgba(0,0,0,.45)'
+    H = [f'<div class="vc" id="{i}bg" style="left:0;top:0;width:720px;height:1280px;z-index:7;opacity:0;background:{R_.BG}"></div>',
+         f'<div class="vc" id="{i}" style="left:0;top:0;width:720px;height:1280px;z-index:8;opacity:0">']
+    if hoi is not None:
+        H.append(f'<div class="pa" style="position:absolute;left:60px;top:150px;width:600px">'
+                 f'<div class="k" style="display:flex;align-items:center;gap:12px;font-family:VCB,sans-serif;font-weight:800;font-size:19px;letter-spacing:4px;color:#E8C27A">'
+                 f'<span style="width:28px;height:3px;background:#E8C27A;display:inline-block"></span>BÌNH LUẬN</div>'
+                 + ''.join(f'<div class="h{k}" style="font-family:VCS,serif;font-weight:700;font-size:{82 if k else 64}px;line-height:1.08;letter-spacing:.01em;margin-top:{14 if not k else 0}px;{FOIL}">{x}</div>' for k, x in enumerate(hoi_txt))
+                 + '</div>'
+                 f'<div class="bu" style="position:absolute;left:70px;top:405px;width:300px;height:170px;transform:scale(1.25);transform-origin:0 0">'
+                 f'<svg width="300" height="170" viewBox="0 0 300 170"><defs><linearGradient id="{i}b1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a332a"/><stop offset="1" stop-color="#1c1814"/></linearGradient>'
+                 f'<linearGradient id="{i}b2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f6e2a2"/><stop offset=".5" stop-color="#c9a25a"/><stop offset="1" stop-color="#7a5a24"/></linearGradient></defs>'
+                 f'<path d="M30 14 H270 a22 22 0 0 1 22 22 V104 a22 22 0 0 1 -22 22 H96 L58 156 L64 126 H30 a22 22 0 0 1 -22 -22 V36 a22 22 0 0 1 22 -22Z" fill="url(#{i}b1)" stroke="url(#{i}b2)" stroke-width="2.5"/>'
+                 f'<path d="M34 22 H262" stroke="#fff" stroke-opacity=".18" stroke-width="3" stroke-linecap="round"/>'
+                 + ''.join(f'<circle class="d{k}" cx="{110 + k * 40}" cy="70" r="11" fill="url(#{i}b2)"/>' for k in range(3)) + '</svg></div>'
+                 f'<div class="ar" style="position:absolute;left:470px;top:455px;font-family:VCB,sans-serif;font-weight:800;font-size:21px;letter-spacing:2.5px;color:rgba(246,241,231,.8);line-height:1.5">BÌNH LUẬN<br>BÊN DƯỚI <span class="aw" style="display:inline-block;color:#E8C27A">↓</span></div>')
+        J += [_foil_js(f'#{i} .h0', hoi - .4), _foil_js(f'#{i} .h1', hoi - .25),
+              f"tl.set('#{i} .k',{{opacity:0,x:-14}},0);tl.to('#{i} .k',{{opacity:1,x:0,duration:.5,ease:'expo.out'}},{a + .05:.2f});",
+              f"tl.set('#{i} .h0,#{i} .h1',{{opacity:0,y:24}},0);tl.to('#{i} .h0',{{opacity:1,y:0,duration:.7,ease:'expo.out'}},{a + .12:.2f});tl.to('#{i} .h1',{{opacity:1,y:0,duration:.7,ease:'expo.out'}},{a + .22:.2f});",
+              f"tl.set('#{i} .bu',{{opacity:0,scale:.7,transformOrigin:'20% 100%'}},0);tl.to('#{i} .bu',{{opacity:1,scale:1,duration:.6,ease:'back.out(2)'}},{hoi - .1:.2f});",
+              f"tl.set('#{i} .ar',{{opacity:0,y:10}},0);tl.to('#{i} .ar',{{opacity:1,y:0,duration:.5}},{hoi + .2:.2f});tl.to('#{i} .aw',{{y:8,duration:.35,yoyo:true,repeat:{int(max(1, (t1 - hoi) / .35))},ease:'sine.inOut'}},{hoi + .4:.2f});"]
+        J += [f"tl.to('#{i} .d{k}',{{y:-10,duration:.22,yoyo:true,repeat:{int(max(1, (t1 - hoi) / .22))},ease:'sine.inOut'}},{hoi + .2 + k * .12:.2f});" for k in range(3)]
+        J.append(f"tl.to('#{i} .pa,#{i} .bu,#{i} .ar',{{opacity:0,y:-30,duration:.35,ease:'power2.in'}},{t1 - .35:.2f});")
+    btn = (f'<div class="bt" style="position:relative;margin-left:auto;height:48px;min-width:138px;border-radius:999px;overflow:hidden;font-family:VCB,sans-serif;font-weight:800;font-size:19px">'
+           f'<div class="b1" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#F6E2A2,#D2A85A 55%,#B38A42);color:#1a140a;box-shadow:inset 0 1px 0 rgba(255,255,255,.6)">{nut}</div>'
+           f'<div class="b2" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:inset 0 0 0 1px rgba(232,194,122,.6);color:#F1D08E;opacity:0">'
+           f'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E8C27A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>{xong}</div>'
+           f'<div class="rp" style="position:absolute;left:50%;top:50%;width:20px;height:20px;margin:-10px;border-radius:50%;background:rgba(255,255,255,.6);opacity:0"></div></div>')
+    H.append(f'<div class="pb" style="position:absolute;left:60px;top:150px;width:600px">'
+             f'<div class="k2" style="display:flex;align-items:center;gap:12px;font-family:VCB,sans-serif;font-weight:800;font-size:19px;letter-spacing:4px;color:#E8C27A">'
+             f'<span style="width:28px;height:3px;background:#E8C27A;display:inline-block"></span>ĐỪNG BỎ LỠ</div>'
+             f'<div class="f1" style="font-family:VCS,serif;font-weight:700;font-size:90px;line-height:1.02;letter-spacing:.01em;margin-top:10px;white-space:nowrap;{FOIL}">FOLLOW VŨ</div>'
+             f'<div class="cd" style="display:flex;align-items:center;gap:16px;margin-top:22px;padding:16px 16px 16px 18px;border-radius:20px;{gl}">'
+             f'<div style="width:56px;height:56px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 0 0 1.5px #E8C27A,0 0 0 4px rgba(232,194,122,.08)">'
+             f'<span style="font-family:VCS,serif;font-style:italic;font-weight:700;font-size:32px;{FOIL}">V</span></div>'
+             f'<div style="line-height:1.15"><div style="font-family:VCB,sans-serif;font-weight:800;font-size:25px;color:#F6F1E7">{ten}</div>'
+             f'<div style="font-family:VSUB,sans-serif;font-weight:500;font-size:16px;letter-spacing:.4px;color:rgba(246,241,231,.6);margin-top:4px">{chuc}</div></div>{btn}</div>'
+             f'<div style="margin-top:22px;width:360px">'
+             + ''.join(f'<div class="c{k}" style="display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid rgba(232,194,122,.22);font-family:VCB,sans-serif;font-weight:800;font-size:24px;letter-spacing:2.5px;color:#F6F1E7">'
+                       f'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E8C27A" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" stroke-opacity=".5"/><path d="M7.5 12.5l3 3 6-6.5"/></svg>{c}</div>' for k, (c, _) in enumerate(chu[:3]))
+             + '</div></div></div>')
+    tap = t1 + .75
+    J += [f"tl.set('#{i}bg,#{i}',{{opacity:1}},{a:.2f});tl.set('#{i}bg,#{i}',{{opacity:0}},{b:.2f});",
+          f"tl.set('#{i} .pb',{{opacity:0}},0);tl.set('#{i} .pb',{{opacity:1}},{t1 - .05:.2f});",
+          f"tl.set('#{i} .k2',{{opacity:0,x:-14}},0);tl.to('#{i} .k2',{{opacity:1,x:0,duration:.5,ease:'expo.out'}},{t1:.2f});",
+          f"tl.set('#{i} .f1',{{opacity:0,y:26,letterSpacing:'.05em'}},0);tl.to('#{i} .f1',{{opacity:1,y:0,letterSpacing:'.01em',duration:.9,ease:'expo.out'}},{t1 + .05:.2f});",
+          _foil_js(f'#{i} .f1', t1 + .1, 1.8),
+          f"tl.set('#{i} .cd',{{opacity:0,y:18}},0);tl.to('#{i} .cd',{{opacity:1,y:0,duration:.6,ease:'expo.out'}},{t1 + .3:.2f});",
+          f"tl.to('#{i} .bt',{{scale:.9,duration:.1,ease:'power2.in'}},{tap:.2f});tl.to('#{i} .bt',{{scale:1,duration:.35,ease:'back.out(2.4)'}},{tap + .1:.2f});",
+          f"tl.fromTo('#{i} .rp',{{opacity:.6,scale:0}},{{opacity:0,scale:9,duration:.55,ease:'power2.out'}},{tap + .05:.2f});",
+          f"tl.to('#{i} .b1',{{opacity:0,duration:.2}},{tap + .12:.2f});tl.to('#{i} .b2',{{opacity:1,duration:.25}},{tap + .12:.2f});"]
+    for k, (c, t) in enumerate(chu[:3]):
+        J.append(f"tl.set('#{i} .c{k}',{{opacity:0,x:-16}},0);tl.to('#{i} .c{k}',{{opacity:1,x:0,duration:.45,ease:'expo.out'}},{t:.2f});")
+    cues = [(t1, 'whoosh'), (tap, 'pop')] + [(t, 'tick') for _, t in chu[:3]] + ([(hoi - .1, 'pop')] if hoi is not None else [])
+    V.full((''.join(H), J, cues)); V.L_full(a, b, 'CTA'); _tr(a)
+    import cine; cine.sfx(t1 + .1, 'shimmer')
 def vanban(a, b, title, meta='', t=None, stamp='BAN HÀNH', head='QUYẾT ĐỊNH', brand='UBND TỈNH ĐẮK LẮK'):   # văn bản / quyết định / dự thảo (bộ chân thực)
     t = a + .5 if t is None else t; V.full(R().vanban(_id('vb'), a, b, t, title, meta, stamp=stamp, head=head, brand=brand)); V.L_full(a, b, 'VB'); _tr(a)
 def ds(a, b, items, title='CẦN BIẾT', ket='', t_ket=None):   # MÀN HÌNH THÔNG TIN: bảng kẹp hồ sơ, tick từng ý · items=[(chữ, t)] 3–6 · nhãn LƯU LẠI
@@ -471,9 +715,17 @@ def luu(a, b):   # nhãn nhỏ LƯU LẠI góc trên
     V.J.append(f"tl.set('#{i}',{{opacity:0}},0);tl.to('#{i}',{{opacity:1,duration:.3}},{a:.2f});tl.set('#{i}',{{opacity:0}},{b:.2f});")
 def so(a, b, value, label='', t=None, unit='', title='', note='', delta=''):   # 1 con số lớn (chỉ số có trong lời)
     t = a + .3 if t is None else t; V.full(R().so(_id('so'), a, b, t, str(value), unit, kicker=label, title=title, note=note, delta=delta)); V.L_full(a, b, 'SO'); _tr(a)
+    if DA_ and re.fullmatch(r'[\d.,]+', str(value).strip()):   # tiếng máy đếm số chạy theo nhịp số (expo.out 1.2 s) + tiếng chốt sáng khi dừng
+        import cine; os.makedirs(os.path.join(DA_, 'sfx'), exist_ok=True); _sfx_count(os.path.join(DA_, 'sfx', 'countup.wav')); cine.sfx(t, 'countup')
 def hinh(a, b, fn, *args, nen=None, **kw):   # bất kỳ hình nào: P.hinh(a, b, R.caotoc, t0, …) — hình bộ chân thực có nền riêng; tự chuyển cảnh + khung người nói
     if not getattr(fn, '__module__', '').startswith('mg_real'): _bg(a, b, nen)
-    i = _id('h'); V.full(fn(i, a, b, *args, **kw)); V.L_full(a, b, 'H'); _tr(a); return i
+    i = _id('h'); r = fn(i, a, b, *args, **kw)
+    if isinstance(r, tuple) and len(r) == 3 and DA_ and any(c[1] == 'count' for c in r[2]):   # số đếm → tiếng máy đếm + chốt (như P.so)
+        import cine; os.makedirs(os.path.join(DA_, 'sfx'), exist_ok=True); _sfx_count(os.path.join(DA_, 'sfx', 'countup.wav'))
+        for t, n_ in r[2]:
+            if n_ == 'count': cine.sfx(t, 'countup')
+        r = (r[0], r[1], [c for c in r[2] if c[1] != 'count'])
+    V.full(r); V.L_full(a, b, 'H'); _tr(a); return i
 def sat(a, b, names=(), **kw):   # bản đồ vệ tinh: xã/phường · routes · pins
     V.full(map_ranh(_id('sat'), a, b, names, **kw)); V.L_full(a, b, 'SAT')
 def R():
@@ -489,14 +741,27 @@ def X():
 V = DA_ = None; WD = []; K = 0; SUBS = []; KIN = []; EXTRA = []; SPK = []
 def init(v, da):
     global V, DA_, WD
-    V, DA_, WD = v, da, _load(da)
+    V, DA_, WD = v, da, _load(da); nen('than')   # nền mặc định: THAN ẤM (anh duyệt 19/11/2026)
+PEND = []   # phần còn lại của 1 từ gộp trong lời ('Đắk Lắk') khi subs.py viết tách ('Đắk Lắk' 2 chữ)
 def _take(tok, spec):
     global K
+    if PEND:
+        w, part = PEND.pop(0)
+        assert _norm(part) == _norm(tok), f"lệch từ ({w['start']}s): viết '{tok}' ≠ lời '{part}' (trong '{w['word']}') — {spec}"
+        return dict(w, word=part)
     assert K < len(WD), f'hết lời mà còn chữ "{tok}" trong: {spec}'
-    w = WD[K]; K += 1
-    assert _norm(w['word']) == _norm(tok), f"lệch từ #{K - 1} ({w['start']}s): viết '{tok}' ≠ lời '{w['word']}' — {spec}"
-    return w
+    w = WD[K]; K += 1; nw, nt = _norm(w['word']), _norm(tok)
+    if nw == nt: return w
+    wp, tp = w['word'].split(), nt.split()
+    if len(wp) > 1 and _norm(wp[0]) == nt:   # lời gộp, viết tách → nhận dần từng chữ
+        PEND.extend((w, x) for x in wp[1:]); return dict(w, word=wp[0])
+    if len(tp) > 1 and nw == tp[0]:          # lời tách, viết gộp ('Đắk_Lắk' hay 'Đắk Lắk' trong 1 khoá) → gom các từ lời
+        ws = [w]
+        while len(ws) < len(tp) and K < len(WD): ws.append(WD[K]); K += 1
+        if _norm(' '.join(x['word'] for x in ws)) == nt: return dict(w, word=' '.join(x['word'] for x in ws), end=ws[-1].get('end'))
+    raise AssertionError(f"lệch từ #{K - 1} ({w['start']}s): viết '{tok}' ≠ lời '{w['word']}' — {spec}")
 def sub(spec, top=None):   # 'chữ | dòng 2 [g:từ khoá]' · [s:] đỏ [l:] xanh lá [g:] vàng · [sxl:] [lxl:] [gxl:] to · top None = tự theo cảnh
+    spec = re.sub(r'\]([.,?!:;…]+)', r'\1]', spec)   # dấu câu viết sau ] → đưa vào trong từ khoá
     parts, toks, j = [], spec.replace('|', ' | ').split(), 0
     while j < len(toks):
         tk = toks[j]
@@ -547,4 +812,4 @@ def finish():
 
 if __name__ == '__main__':
     c, *a = sys.argv[1:]
-    {'setup': setup, 'go': go, 'cut': cut, 'build': build, 'out': out, 'wait': wait, 'grid': grid, 'ranh': ranh, 'speakers': speakers}[c](*a)
+    {'setup': setup, 'go': go, 'cut': cut, 'build': build, 'out': out, 'wait': wait, 'grid': grid, 'ranh': ranh, 'speakers': speakers, 'xem': xem, 'diadanh': diadanh}[c](*a)
