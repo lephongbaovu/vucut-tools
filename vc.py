@@ -55,7 +55,7 @@ def lpv_css():   # FONT CHỮ NHẤN cố định của anh Vũ: LPV Display (b�
 WM_URL = 'https://raw.githubusercontent.com/lephongbaovu/realcut-tools/main/assets/fonts/Cinzel-SemiBold.ttf'
 WM = {'text': 'LE PHONG VU', 'on': True}
 def watermark(text='LE PHONG VU', on=True): WM.update(text=text, on=on)   # P.watermark(on=False) = tắt cho video này
-def _wm_html():   # watermark chung với realcut: tên anh Vũ, Cinzel kiểu doanh nhân, trôi chậm, LỚP CHÌM dưới mọi chữ/đồ hoạ
+def _wm_html():   # watermark chung với realcut: tên anh Vũ, Cinzel, trôi chậm. z 7 + gắn cuối DOM: trên người nói, panel, nền đồ hoạ, bản đồ (vẫn thấy ở cảnh đồ hoạ toàn khung); dưới nội dung đồ hoạ (z 8), phụ đề/chữ (z ≥ 10), khung người nói nhỏ (z 30)
     if not WM['on']: return
     fp = os.path.join(T_DIR, 'Cinzel-SemiBold.ttf')
     if not os.path.exists(fp) or os.path.getsize(fp) < 30000:
@@ -63,7 +63,7 @@ def _wm_html():   # watermark chung với realcut: tên anh Vũ, Cinzel kiểu d
     if not os.path.exists(fp) or os.path.getsize(fp) < 30000: print('  ⚠ không tải được font watermark — bỏ watermark'); return
     b64 = base64.b64encode(open(fp, 'rb').read()).decode()
     V.H.append("<style>@font-face{font-family:VWM;font-weight:600;font-display:block;src:url(data:font/ttf;base64,%s) format('truetype')}</style>" % b64
-               + '<div id="wmk" style="position:absolute;left:360px;top:512px;z-index:4;pointer-events:none;white-space:nowrap;font-family:VWM,serif;'
+               + '<div id="wmk" style="position:absolute;left:360px;top:512px;z-index:7;pointer-events:none;white-space:nowrap;font-family:VWM,serif;'
                'font-weight:600;font-size:23px;letter-spacing:.32em;color:rgba(247,241,231,.42);text-shadow:0 1px 3px rgba(0,0,0,.3)">' + WM['text'] + '</div>')
     T = float(V.T); rx = max(1, int(T / 13) + 1); ry = max(1, int(T / 18.5) + 1)   # x chu kỳ 26 s, y 37 s (như realcut)
     V.J.append("tl.set('#wmk',{xPercent:-50,yPercent:-50,x:0,y:0},0);"
