@@ -64,7 +64,7 @@ def _wm_html():   # watermark chung với realcut: tên anh Vũ, Cinzel, trôi c
     b64 = base64.b64encode(open(fp, 'rb').read()).decode()
     V.H.append("<style>@font-face{font-family:VWM;font-weight:600;font-display:block;src:url(data:font/ttf;base64,%s) format('truetype')}</style>" % b64
                + '<div id="wmk" style="position:absolute;left:360px;top:512px;z-index:7;pointer-events:none;white-space:nowrap;font-family:VWM,serif;'
-               'font-weight:600;font-size:23px;letter-spacing:.32em;color:rgba(247,241,231,.42);text-shadow:0 1px 3px rgba(0,0,0,.3)">' + WM['text'] + '</div>')
+               'font-weight:600;font-size:25px;letter-spacing:.32em;color:rgba(247,241,231,.50);text-shadow:0 1px 3px rgba(0,0,0,.3)">' + WM['text'] + '</div>')
     T = float(V.T); rx = max(1, int(T / 13) + 1); ry = max(1, int(T / 18.5) + 1)   # x chu kỳ 26 s, y 37 s (như realcut)
     V.J.append("tl.set('#wmk',{xPercent:-50,yPercent:-50,x:0,y:0},0);"
                f"tl.fromTo('#wmk',{{x:-194}},{{x:194,duration:13,ease:'sine.inOut',repeat:{rx},yoyo:true}},0);"
