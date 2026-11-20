@@ -41,6 +41,17 @@ def font_css():
     open(FONT, 'w', encoding='utf-8').write('\n'.join(faces))
     return open(FONT, encoding='utf-8').read()
 
+LPV_URL = 'https://raw.githubusercontent.com/lephongbaovu/realcut-tools/main/assets/fonts/LPVDisplay-Black.ttf'
+def lpv_css():   # FONT CHỮ NHẤN cố định của anh Vũ: LPV Display (bản dày) thay Playfair cho họ VCS + chữ hook; màu giữ nguyên luật vucut
+    fp = os.path.join(T_DIR, 'LPVDisplay-Black.ttf')
+    if not os.path.exists(fp) or os.path.getsize(fp) < 50000:
+        os.makedirs(T_DIR, exist_ok=True); subprocess.run(['curl', '-sL', '-m', '120', '-o', fp, LPV_URL])
+    if not os.path.exists(fp) or os.path.getsize(fp) < 50000: print('  ⚠ không tải được font LPV — giữ font cũ'); return ''
+    b64 = base64.b64encode(open(fp, 'rb').read()).decode()
+    face = "@font-face{font-family:%s;font-style:%s;font-weight:100 900;font-display:block;src:url(data:font/ttf;base64,%s) format('truetype')}"
+    return (face % ('VCS', 'italic', b64) + face % ('VCS', 'normal', b64) + face % ('VLPV', 'normal', b64)
+            + '.hook{font-family:VLPV,sans-serif!important;font-style:normal!important}')
+
 # ---------- lời ----------
 def _norm(s): return s.strip(',.?!:;"“”').replace('_', ' ').lower()
 def _p(DA, cut=True): return os.path.join(DA, 'cut', 'words_cut.json') if cut else os.path.join(DA, 'words.json')
@@ -807,7 +818,7 @@ def finish():
                 fx, fy = SP['faces'][who(t)]; L = max(0, min(220, fx * 720 - 250)) * .348; Tp = max(0, min(740, fy * 1280 - 250)) * .348
                 V.J.append(f"tl.set('#pipImg',{{left:{-L:.1f},top:{-Tp:.1f}}},{max(0, t - .02):.2f});")
     json.dump([[n, a, b] for n, a, b in V.LAYOUT], open(os.path.join(DA_, 'layout.json'), 'w'))
-    V.H.append('<style id="phude">' + font_css() + CSS + ''.join(KCSS.replace('#K', '#' + k) for k in KIN) + ''.join(EXTRA) + '</style>')
+    V.H.append('<style id="phude">' + font_css() + lpv_css() + CSS + ''.join(KCSS.replace('#K', '#' + k) for k in KIN) + ''.join(EXTRA) + '</style>')
     print(f'  ✓ phụ đề: {len(SUBS)} cụm · {len(WD)} từ')
 
 if __name__ == '__main__':
