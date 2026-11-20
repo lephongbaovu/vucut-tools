@@ -1,0 +1,7 @@
+# realcut · thư viện Python (đã kiểm thử Python 3.10–3.13). Cài: python -m pip install -r requirements.txt
+numpy>=1.24,<3
+Pillow>=10,<14
+scipy>=1.10,<2
+opencv-python-headless>=4.8,<5
+onnxruntime>=1.17,<2
+faster-whisper>=1.0.3,<2

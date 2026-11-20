@@ -1,0 +1,62 @@
+# Tên riêng Đắk Lắk (tỉnh mới từ 01/07/2025 gồm Đắk Lắk cũ + Phú Yên cũ) — mồi cho Whisper. Mỗi dòng 1 tên.
+Đắk Lắk
+Buôn Ma Thuột
+Phú Yên
+Tuy Hòa
+Buôn Hồ
+Sông Cầu
+Ea Kao
+Hồ Ea Kao
+Hồ Lắk
+Ea Kar
+Ea H'leo
+Ea Súp
+Krông Pắc
+Krông Búk
+Krông Năng
+Krông Ana
+Krông Bông
+Cư M'gar
+Cư Kuin
+M'Drắk
+Lắk
+Buôn Đôn
+Đông Hòa
+Tây Hòa
+Sơn Hòa
+Sông Hinh
+Đồng Xuân
+Tuy An
+Phú Hòa
+Tân Lợi
+Tân An
+Tân Lập
+Thành Nhất
+Ea Tam
+Ea Tu
+Hòa Thắng
+Hòa Phú
+Quốc lộ 14
+Quốc lộ 26
+Quốc lộ 27
+Quốc lộ 29
+cao tốc Khánh Hòa – Buôn Ma Thuột
+cao tốc Bắc – Nam
+Đại lộ Đông Tây
+sân bay Buôn Ma Thuột
+sân bay Tuy Hòa
+cảng Vũng Rô
+Bãi Xép
+Gành Đá Đĩa
+Vịnh Xuân Đài
+sổ hồng
+sổ đỏ
+thổ cư
+mặt tiền
+quy hoạch
+pháp lý
+căn hộ
+nhà phố
+biệt thự
+shophouse
+Eracity

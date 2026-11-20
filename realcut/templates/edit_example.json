@@ -1,0 +1,364 @@
+{
+ "_ghi_chu": "Ví dụ thật ERA City — tầng nền. src = id trong broll/index.json hoặc đường dẫn.",
+ "ratio": "9:16",
+ "broll": [
+  {
+   "t": 5.13,
+   "d": 2.176,
+   "src": "broll_916/v1120_corner.mp4",
+   "in": 0.4,
+   "move": "push",
+   "focus_x": 0.5,
+   "xf": 0,
+   "speed": 1.0
+  },
+  {
+   "t": 7.306,
+   "d": 1.234,
+   "src": "broll_916/v1120_aerial.mp4",
+   "in": 0.3,
+   "move": "push",
+   "focus_x": 0.5,
+   "xf": 0,
+   "speed": 1.0
+  },
+  {
+   "t": 14.49,
+   "d": 3.738,
+   "src": "broll_916/fb_flycam_new.mp4",
+   "in": 0.3,
+   "move": "none",
+   "focus_x": 0.5,
+   "xf": 0,
+   "speed": 1.6
+  },
+  {
+   "t": 18.228,
+   "d": 1.28,
+   "src": "broll_916/mk_mall_timelapse.mp4",
+   "in": 1.0,
+   "move": "push",
+   "focus_x": 0.5,
+   "xf": 0,
+   "speed": 1.0
+  },
+  {
+   "t": 19.508,
+   "d": 1.25,
+   "src": "broll_916/mk_mall_atrium.mp4",
+   "in": 1.0,
+   "move": "push",
+   "focus_x": 0.5,
+   "xf": 0,
+   "speed": 1.0
+  },
+  {
+   "t": 20.758,
+   "d": 1.316,
+   "src": "broll_916/mk_mall_escalator.mp4",
+   "in": 3.0,
+   "move": "none",
+   "focus_x": 0.5,
+   "xf": 0,
+   "speed": 1.0
+  },
+  {
+   "t": 22.074,
+   "d": 1.951,
+   "src": "broll_916/mk_mall_atrium.mp4",
+   "in": 4.6,
+   "move": "pull",
+   "focus_x": 0.5,
+   "xf": 0,
+   "speed": 1.0
+  },
+  {
+   "t": 24.025,
+   "d": 1.383,
+   "src": "broll_916/mk_mall_shoppers.mp4",
+   "in": 0.5,
+   "move": "push",
+   "focus_x": 0.5,
+   "xf": 0,
+   "speed": 1.0
+  },
+  {
+   "t": 25.408,
+   "d": 0.8,
+   "src": "broll_916/mk_mall_escalator.mp4",
+   "in": 7.0,
+   "move": "none",
+   "focus_x": 0.5,
+   "xf": 0,
+   "speed": 1.0
+  },
+  {
+   "t": 26.208,
+   "d": 0.59,
+   "src": "broll_916/cv_pay.mp4",
+   "in": 2.0,
+   "move": "none",
+   "focus_x": 0.5,
+   "xf": 0,
+   "speed": 1.0
+  },
+  {
+   "t": 26.798,
+   "d": 1.662,
+   "src": "broll_916/v1120_aerial.mp4",
+   "in": 2.6,
+   "move": "pull",
+   "focus_x": 0.5,
+   "xf": 0,
+   "speed": 1.0
+  },
+  {
+   "t": 28.46,
+   "d": 1.208,
+   "src": "broll_916/v1120_row.mp4",
+   "in": 0.3,
+   "move": "push",
+   "focus_x": 0.5,
+   "xf": 0,
+   "speed": 1.0
+  },
+  {
+   "t": 29.668,
+   "d": 2.228,
+   "src": "broll_916/fb_pho_hoanghon.mp4",
+   "in": 2.4,
+   "move": "push",
+   "focus_x": 0.5,
+   "xf": 0,
+   "speed": 1.0
+  },
+  {
+   "t": 31.896,
+   "d": 2.242,
+   "src": "broll_916/v1120_row.mp4",
+   "in": 2.4,
+   "move": "rise",
+   "focus_x": 0.5,
+   "xf": 0,
+   "speed": 1.0
+  },
+  {
+   "t": 34.138,
+   "d": 1.195,
+   "src": "broll_916/v1120_cafe.mp4",
+   "in": 0.2,
+   "move": "push",
+   "focus_x": 0.5,
+   "xf": 0,
+   "speed": 1.0
+  },
+  {
+   "t": 35.333,
+   "d": 0.665,
+   "src": "broll_916/st_browsing-in-a-fashion-store.mp4",
+   "in": 0.5,
+   "move": "none",
+   "focus_x": 0.5,
+   "xf": 0,
+   "speed": 1.0
+  },
+  {
+   "t": 35.998,
+   "d": 0.71,
+   "src": "broll_916/v1120_clinic.mp4",
+   "in": 0.4,
+   "move": "none",
+   "focus_x": 0.5,
+   "xf": 0,
+   "speed": 1.0
+  },
+  {
+   "t": 36.708,
+   "d": 0.598,
+   "src": "broll_916/st_colleagues-come-to-the-office.mp4",
+   "in": 7.5,
+   "move": "none",
+   "focus_x": 0.5,
+   "xf": 0,
+   "speed": 1.0
+  },
+  {
+   "t": 37.306,
+   "d": 1.974,
+   "src": "broll_916/mk_mall_timelapse.mp4",
+   "in": 4.0,
+   "move": "push",
+   "focus_x": 0.5,
+   "xf": 0,
+   "speed": 1.0
+  },
+  {
+   "t": 39.28,
+   "d": 0.488,
+   "src": "broll_916/mk_mall_shoppers.mp4",
+   "in": 4.6,
+   "move": "none",
+   "focus_x": 0.5,
+   "xf": 0,
+   "speed": 1.0
+  },
+  {
+   "t": 39.768,
+   "d": 1.486,
+   "src": "broll_916/st_college-students-walking.mp4",
+   "in": 7.0,
+   "move": "push",
+   "focus_x": 0.5,
+   "xf": 0,
+   "speed": 1.0
+  },
+  {
+   "t": 41.254,
+   "d": 1.95,
+   "src": "broll_916/fb_flycam_new.mp4",
+   "in": 17.5,
+   "move": "none",
+   "focus_x": 0.5,
+   "xf": 0,
+   "speed": 1.6
+  },
+  {
+   "t": 43.204,
+   "d": 1.224,
+   "src": "broll_916/v1120_corner.mp4",
+   "in": 3.4,
+   "move": "none",
+   "focus_x": 0.5,
+   "xf": 0,
+   "speed": 1.0
+  },
+  {
+   "t": 44.428,
+   "d": 1.09,
+   "src": "broll_916/mk_bar_busy.mp4",
+   "in": 2.5,
+   "move": "push",
+   "focus_x": 0.5,
+   "xf": 0,
+   "speed": 1.0
+  },
+  {
+   "t": 45.518,
+   "d": 2.24,
+   "src": "broll_916/fb_cong.mp4",
+   "in": 0.5,
+   "move": "right",
+   "focus_x": 0.62,
+   "xf": 0,
+   "speed": 1.0
+  },
+  {
+   "t": 47.758,
+   "d": 2.56,
+   "src": "broll_916/v1120_park.mp4",
+   "in": 0.3,
+   "move": "push",
+   "focus_x": 0.5,
+   "xf": 0,
+   "speed": 1.0
+  },
+  {
+   "t": 50.318,
+   "d": 2.1,
+   "src": "broll_916/fb_pho_hoanghon.mp4",
+   "in": 4.8,
+   "move": "push",
+   "focus_x": 0.5,
+   "xf": 0,
+   "speed": 1.0
+  },
+  {
+   "t": 52.418,
+   "d": 2.605,
+   "src": "broll_916/fb_daynhapho.mp4",
+   "in": 0.3,
+   "move": "left",
+   "focus_x": 0.6,
+   "xf": 0,
+   "speed": 1.0
+  },
+  {
+   "t": 55.023,
+   "d": 0.975,
+   "src": "broll_916/v1120_cafe.mp4",
+   "in": 1.0,
+   "move": "none",
+   "focus_x": 0.5,
+   "xf": 0,
+   "speed": 1.0
+  },
+  {
+   "t": 55.998,
+   "d": 2.18,
+   "src": "broll_916/fb_cong.mp4",
+   "in": 2.8,
+   "move": "push",
+   "focus_x": 0.6,
+   "xf": 0,
+   "speed": 1.0
+  },
+  {
+   "t": 58.178,
+   "d": 1.13,
+   "src": "broll_916/v1120_pool.mp4",
+   "in": 0.4,
+   "move": "push",
+   "focus_x": 0.5,
+   "xf": 0,
+   "speed": 1.0
+  },
+  {
+   "t": 59.308,
+   "d": 1.125,
+   "src": "broll_916/v1120_gym.mp4",
+   "in": 0.4,
+   "move": "push",
+   "focus_x": 0.5,
+   "xf": 0,
+   "speed": 1.0
+  }
+ ],
+ "aroll_zoom": [
+  {
+   "t": 8.54,
+   "d": 1.32,
+   "from": 1.0,
+   "to": 1.05
+  },
+  {
+   "t": 9.86,
+   "d": 2.0,
+   "type": "punch",
+   "scale": 1.14
+  },
+  {
+   "t": 11.86,
+   "d": 2.63,
+   "from": 1.04,
+   "to": 1.1
+  },
+  {
+   "t": 60.468,
+   "d": 2.3,
+   "from": 1.0,
+   "to": 1.05
+  },
+  {
+   "t": 62.758,
+   "d": 3.4,
+   "type": "punch",
+   "scale": 1.12
+  }
+ ],
+ "grade": {
+  "preset": "neutral",
+  "strength": 1.0,
+  "sat": 1.03
+ },
+ "end_hold": 3.0
+}
