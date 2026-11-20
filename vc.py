@@ -52,6 +52,24 @@ def lpv_css():   # FONT CHỮ NHẤN cố định của anh Vũ: LPV Display (b�
     return (face % ('VCS', 'italic', b64) + face % ('VCS', 'normal', b64) + face % ('VLPV', 'normal', b64)
             + '.hook{font-family:VLPV,sans-serif!important;font-style:normal!important}')
 
+WM_URL = 'https://raw.githubusercontent.com/lephongbaovu/realcut-tools/main/assets/fonts/Cinzel-SemiBold.ttf'
+WM = {'text': 'LE PHONG VU', 'on': True}
+def watermark(text='LE PHONG VU', on=True): WM.update(text=text, on=on)   # P.watermark(on=False) = tắt cho video này
+def _wm_html():   # watermark chung với realcut: tên anh Vũ, Cinzel kiểu doanh nhân, trôi chậm, LỚP CHÌM dưới mọi chữ/đồ hoạ
+    if not WM['on']: return
+    fp = os.path.join(T_DIR, 'Cinzel-SemiBold.ttf')
+    if not os.path.exists(fp) or os.path.getsize(fp) < 30000:
+        os.makedirs(T_DIR, exist_ok=True); subprocess.run(['curl', '-sL', '-m', '120', '-o', fp, WM_URL])
+    if not os.path.exists(fp) or os.path.getsize(fp) < 30000: print('  ⚠ không tải được font watermark — bỏ watermark'); return
+    b64 = base64.b64encode(open(fp, 'rb').read()).decode()
+    V.H.append("<style>@font-face{font-family:VWM;font-weight:600;font-display:block;src:url(data:font/ttf;base64,%s) format('truetype')}</style>" % b64
+               + '<div id="wmk" style="position:absolute;left:360px;top:512px;z-index:4;pointer-events:none;white-space:nowrap;font-family:VWM,serif;'
+               'font-weight:600;font-size:23px;letter-spacing:.32em;color:rgba(247,241,231,.42);text-shadow:0 1px 3px rgba(0,0,0,.3)">' + WM['text'] + '</div>')
+    T = float(V.T); rx = max(1, int(T / 13) + 1); ry = max(1, int(T / 18.5) + 1)   # x chu kỳ 26 s, y 37 s (như realcut)
+    V.J.append("tl.set('#wmk',{xPercent:-50,yPercent:-50,x:0,y:0},0);"
+               f"tl.fromTo('#wmk',{{x:-194}},{{x:194,duration:13,ease:'sine.inOut',repeat:{rx},yoyo:true}},0);"
+               f"tl.fromTo('#wmk',{{y:-218}},{{y:218,duration:18.5,ease:'sine.inOut',repeat:{ry},yoyo:true}},0);")
+
 # ---------- lời ----------
 def _norm(s): return s.strip(',.?!:;"“”').replace('_', ' ').lower()
 def _p(DA, cut=True): return os.path.join(DA, 'cut', 'words_cut.json') if cut else os.path.join(DA, 'words.json')
@@ -818,6 +836,7 @@ def finish():
                 fx, fy = SP['faces'][who(t)]; L = max(0, min(220, fx * 720 - 250)) * .348; Tp = max(0, min(740, fy * 1280 - 250)) * .348
                 V.J.append(f"tl.set('#pipImg',{{left:{-L:.1f},top:{-Tp:.1f}}},{max(0, t - .02):.2f});")
     json.dump([[n, a, b] for n, a, b in V.LAYOUT], open(os.path.join(DA_, 'layout.json'), 'w'))
+    _wm_html()
     V.H.append('<style id="phude">' + font_css() + lpv_css() + CSS + ''.join(KCSS.replace('#K', '#' + k) for k in KIN) + ''.join(EXTRA) + '</style>')
     print(f'  ✓ phụ đề: {len(SUBS)} cụm · {len(WD)} từ')
 
