@@ -177,9 +177,11 @@ def caotoc(i, a, b, t0, sign=('BUÔN MA THUỘT', '45 km'), kicker='HẠ TẦNG'
             s += (f'<path d="M{x:.0f} {yb:.0f} V{yb - ph:.0f} h{-side * ph * .22:.0f}" stroke="hsl(220,8%,62%)" stroke-width="{1 + 3 * u:.1f}" fill="none"/>'
                   f'<circle cx="{x - side * ph * .22:.0f}" cy="{yb - ph + 2:.0f}" r="{2 + 5 * u:.1f}" fill="hsl(45,100%,85%)" filter="url(#{i}gl)"/>')
     gy = HZ - 70
-    s += (f'<g class="gt"><rect x="{VX - 150}" y="{gy}" width="8" height="78" fill="#7d838c"/><rect x="{VX + 142}" y="{gy}" width="8" height="78" fill="#7d838c"/>'
-          f'<rect x="{VX - 154}" y="{gy - 8}" width="308" height="10" fill="#8d939c"/><rect x="{VX - 120}" y="{gy - 60}" width="240" height="58" rx="6" fill="url(#{i}sn)" stroke="#fff" stroke-width="2.5"/>'
-          + _t(VX, gy - 36, sign[0], 18, '#fff', 'middle', w=800) + _t(VX, gy - 13, sign[1], 18, 'hsl(48,100%,70%)', 'middle', w=800) + '</g>')
+    bw = max(240, int(max(len(sign[0]), len(sign[1])) * 12.5) + 36); hb = bw // 2   # biển tự nới theo chữ dài
+    c2 = 'hsl(48,100%,70%)' if any(ch.isdigit() for ch in sign[1]) else '#fff'      # dòng 2: vàng nếu là khoảng cách, trắng nếu là tên
+    s += (f'<g class="gt"><rect x="{VX - hb - 30}" y="{gy}" width="8" height="78" fill="#7d838c"/><rect x="{VX + hb + 22}" y="{gy}" width="8" height="78" fill="#7d838c"/>'
+          f'<rect x="{VX - hb - 34}" y="{gy - 8}" width="{bw + 68}" height="10" fill="#8d939c"/><rect x="{VX - hb}" y="{gy - 60}" width="{bw}" height="58" rx="6" fill="url(#{i}sn)" stroke="#fff" stroke-width="2.5"/>'
+          + _t(VX, gy - 36, sign[0], 18, '#fff', 'middle', w=800) + _t(VX, gy - 13, sign[1], 18, c2, 'middle', w=800) + '</g>')
     for k, (lx, col) in enumerate(((VX - 70, 'hsl(0,0%,92%)'), (VX + 80, 'hsl(210,60%,45%)'))):
         s += (f'<g class="car{k}"><ellipse cx="{lx}" cy="{Y0 + H - 22}" rx="58" ry="10" fill="#000" opacity=".45"/><path d="M{lx - 52} {Y0 + H - 30} v-30 q0 -12 12 -14 l14 -24 q4 -6 12 -6 h28 q8 0 12 6 l14 24 q12 2 12 14 v30 z" fill="{col}"/>'
               f'<path d="M{lx - 26} {Y0 + H - 70} l10 -20 h32 l10 20 z" fill="#1d2a38"/><rect x="{lx - 50}" y="{Y0 + H - 54}" width="18" height="8" rx="3" fill="hsl(0,100%,55%)" filter="url(#{i}gl)"/>'
@@ -2789,3 +2791,42 @@ def truonghoc(i, a, b, t0, value='', unit='học sinh', tag='', kicker='GIÁO D�
     j = _vis(i, a, b) + _headj(i, a, title) + [_rv(f'#{i} .gd', a + .05, 30, .7), _qgrow(i, 'sc', t0, .8), _qgrow(i, 'fl', t0 + .4, .6), _qpop(i, 't0', t0 + .5, .5)]
     j += [T(f'#{i} .fg', t0 + .8, skewY=6, duration=.5, yoyo=True, repeat=6, ease='sine.inOut', transformOrigin='0% 50%')] + [_qpop(i, f'p{k}', t0 + .6 + k * .08, .35) for k in range(5)] + ([_rv(f'#{i} .tg', t0 + .9, 10)] if tag else []) + jn
     return _out(i, a, b, 'r_truonghoc', s, j), j, [(t0, 'block'), (t0 + .6, 'pop')] + ([(t0 + .5, 'count')] if value else [])
+
+
+# ---------------------------------------------------------------- TIN BÁO CHÍ (ảnh thật từ báo, ghi nguồn)
+def bao(i, a, b, img, outlet='BÁO XÂY DỰNG', head='', cap='', author='', value='', unit='', label='', t_num=None, kicker='THEO BÁO CHÍ', title='', source=''):
+    """trang báo giấy: tên báo (chữ serif, không dùng logo), ảnh thật của bài hiện ĐỦ khung (không cắt), chú thích + "Tác giả: …" nhỏ góc phải dưới ảnh + "Nguồn: …";
+    img = đường dẫn ảnh; head = tít ngắn; value/unit/label = ô số vàng trên ảnh, đếm ở t_num (chỉ số có trong lời)"""
+    import base64, io
+    from PIL import Image
+    im = Image.open(img).convert('RGB'); ar = im.width / im.height; im.thumbnail((1200, 1200)); bf = io.BytesIO(); im.save(bf, 'JPEG', quality=88)
+    b64 = base64.b64encode(bf.getvalue()).decode()
+    PY = 262 if title else 196; BOT = 684
+    wrap = lambda n: [ln for ln in re.sub(r'(.{1,%d})(\s|$)' % n, r'\1\n', cap).strip().split('\n')][:2] if cap else []
+    capL = wrap(62)
+    top = PY + 52 + (36 if head else 6); low = (18 if author else 0) + 21 * len(capL) + 34   # chỗ dưới ảnh: tác giả · chú thích · nguồn
+    ph_h = BOT - low - top; ph_w = min(596, ph_h * ar); ph_h = ph_w / ar          # ảnh giữ đúng tỉ lệ → không mất đầu người
+    PW = max(ph_w + 32, 440); capL = wrap(int((PW - 32) / 8.3)); PX = 352 - PW / 2; ph_x = PX + (PW - ph_w) / 2; PH = top - PY + ph_h + low
+    fs = lambda x, y, txt, sz, col, anc='start', it=False, cls='': (f'<text class="{cls}" x="{x:.0f}" y="{y:.0f}" text-anchor="{anc}" font-family="DejaVu Serif,Georgia,serif" font-weight="700" '
+                                                                 f'{"font-style=\"italic\" " if it else ""}font-size="{sz}" fill="{col}">{txt}</text>')
+    s = _qhead(i, kicker, title, f'<linearGradient id="{i}np" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f6f1e6"/><stop offset="1" stop-color="#ebe3d2"/></linearGradient>')
+    yb = top + ph_h
+    s += (f'<g class="pp" transform="rotate(-1 360 {PY + PH / 2:.0f})"><rect x="{PX:.0f}" y="{PY}" width="{PW:.0f}" height="{PH:.0f}" rx="4" fill="url(#{i}np)" filter="url(#{i}sh)"/>'
+          f'<rect x="{PX:.0f}" y="{PY}" width="{PW:.0f}" height="{PH:.0f}" rx="4" fill="#fff" filter="url(#{i}nz)" opacity=".35"/>'
+          + fs(PX + 16, PY + 34, outlet, 25, '#1d1a16')
+          + f'<rect x="{PX + 16:.0f}" y="{PY + 44}" width="{PW - 32:.0f}" height="2" fill="#1d1a16"/><rect x="{PX + 16:.0f}" y="{PY + 48}" width="{PW - 32:.0f}" height=".8" fill="#1d1a16"/>'
+          + (fs(PX + 16, PY + 52 + 26, head, 22, '#14110d') if head else '')
+          + f'<image href="data:image/jpeg;base64,{b64}" x="{ph_x:.1f}" y="{top:.1f}" width="{ph_w:.1f}" height="{ph_h:.1f}" preserveAspectRatio="xMidYMid meet"/>'
+          + (fs(ph_x + ph_w, yb + 15, f'Tác giả: {author}', 12, '#6b6357', 'end', True, 'au') if author else '')
+          + ''.join(f'<text class="cp" x="{PX + 16:.0f}" y="{yb + (18 if author else 0) + 20 + k * 21:.0f}" font-family="VCB" font-weight="600" font-size="15" fill="#4a443b">{ln}</text>' for k, ln in enumerate(capL))
+          + fs(PX + PW - 16, PY + PH - 12, f'Nguồn: {outlet.title() if outlet.isupper() else outlet}', 15, '#8a2a1c', 'end', True, 'src') + '</g>')
+    j = _vis(i, a, b) + _headj(i, a, title) + [_rv(f'#{i} .pp', a + .08, 40, .8), _qfade(i, 'cp', a + .5), _qfade(i, 'au', a + .6), _qfade(i, 'src', a + .7)]
+    cues = [(a + .1, 'paper')]
+    if value:
+        tn = t_num if t_num is not None else a + .6; bx, by = ph_x + 12, yb - 86
+        bw = max(140, int(_w(value, 44) + (_w(unit, 22) + 8 if unit else 0) + 30), int(_w(label, 12) + 1.5 * len(label) + 28) if label else 0)
+        s += (f'<g class="bd"><rect x="{bx:.0f}" y="{by:.0f}" width="{bw}" height="74" rx="8" fill="rgba(12,10,8,.8)" stroke="{GOLD}" stroke-width="2"/>'
+              + (_t(bx + 14, by + 21, label, 12, GOLD, w=800, ls=1.5) if label else '')
+              + _t(bx + 14, by + 64, value, 44, '#fff', cls='nv', w=800) + (_t(bx + 20 + _w(value, 44), by + 64, unit, 22, GOLD, cls='nu', w=800) if unit else '') + '</g>')
+        j += [_qpop(i, 'bd', tn - .25, .45, '0% 100%')] + _numj(i, tn, value); cues.append((tn, 'count'))
+    return _out(i, a, b, 'r_bao', s, j), j, cues

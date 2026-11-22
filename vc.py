@@ -1,6 +1,6 @@
 """vc.py · vucut gọn: setup | go VIDEO DA [thu] | cut DA ["sai=>đúng"…] [--keep a-b] [--drop a-b] | build DA | out DA | wait DA | grid DA [video.mp4] [giây…] | ranh [tên…] | speakers DA
 Trong build.py (tự sinh): import vc as P → P.sub / P.skip / P.kinetic / P.hook / P.hide / P.speaker · cảnh mẫu P.mat / P.vanban / P.ds / P.so / P.hinh / P.sat"""
-import base64, glob, json, os, re, subprocess, sys, tarfile, tempfile, time
+import base64, glob, json, os, re, shutil, subprocess, sys, tarfile, tempfile, time
 HOME = os.path.expanduser('~/.vucut'); T_DIR = os.path.join(HOME, 'tools'); FONT = os.path.join(T_DIR, 'vsub_font.css')
 VCP = os.path.join(HOME, 'vc_path')
 def VC(): return open(VCP).read().strip()
@@ -221,11 +221,132 @@ MOODS = {   # hợp âm (MIDI) · gốc bass · BPM · độ sáng · mô tả
                  desc='ấm áp – hy vọng (Sol trưởng G–D–Em–C): an cư, an sinh, cơ hội, tin tích cực'),
     'hung': dict(ch=[[50, 53, 57, 62], [46, 50, 53, 58], [48, 52, 55, 60], [45, 49, 52, 57]], root=[38, 34, 36, 33], bpm=112,
                  desc='hùng tráng – đà phát triển (Rê thứ Dm–Bb–C–A): hạ tầng lớn, cao tốc, sân bay, vốn đầu tư'),
+    'tin':  dict(ch=[[57, 60, 64], [53, 57, 60], [50, 53, 57], [52, 56, 59]], root=[45, 41, 38, 40], bpm=96, gain=-8,
+                 desc='đưa tin – phân tích, kịch tính (La thứ Am–F–Dm–E): tin tức, tiến độ dự án, số liệu, nhận định'),
+    'phantich': dict(ch=[[57, 60, 64, 67], [53, 57, 60, 64], [48, 55, 60, 62], [50, 55, 59, 64]], root=[45, 41, 36, 43], bpm=104, gain=-10,
+                 desc='phân tích hiện đại – giữ nhịp (Am7–Fmaj7–Cadd9–G6): groove đều, đổi lớp mỗi 8 ô nhịp để giữ chân người xem'),
     'toi':  dict(desc='điện ảnh tối, nhịp đều (mặc định cũ): rủi ro, cảnh báo, pháp lý'),
 }
-def nhac(mood='sang'):   # P.nhac('sang'|'hung'|'toi') trong scenes.py — chọn mood nhạc nền theo nội dung
+# ---------- MỨC ÂM ANH VŨ ĐÃ DUYỆT (22/11/2026) — mặc định cho mọi video ----------
+NHAC_MACDINH = 'tin'   # nhạc nền mặc định: đưa tin – phân tích, kịch tính, tích tắc 70 %
+SFX_DB = -9            # hiệu ứng trong lời (whoosh, pop, chuyển cảnh…) — nhỏ, không gây khó chịu
+CINE_DB = dict(impact=-17, reverse=-22, braam=-19, tape=-20, heart=-18, shimmer=-23, camera=-21, rumble=-23, ranh=-20, countup=-22, paper=-20)   # âm điện ảnh / máy đếm / vẽ viền
+CINE_DB_KHAC = -22
+LUFS, TP = -11, -1.0   # độ to tổng chuẩn TikTok/Facebook
+# giọng: lọc 80 Hz + nén 3:1 (ngưỡng -22 dB, +3 dB) + sáng 3 kHz +2 dB · nhạc: gain theo mood (tin -8 dB), khoét 2.2 kHz -5 dB, nhường giọng 2.5:1
+def nhac(mood=NHAC_MACDINH):   # P.nhac() = nhạc mặc định anh duyệt · hoặc 'sang'|'hung'|'tin'|'phantich'|'toi' trong scenes.py — chọn mood nhạc nền theo nội dung
     assert mood in MOODS, f'mood: {list(MOODS)}'; json.dump({'mood': mood}, open(os.path.join(DA_, 'nhac.json'), 'w'))
+def _music_tin(dur, impacts, path):   # nền tin tức: drone trầm + ostinato móc 16 + tiếng tích tắc đồng hồ + nhịp trống thưa, căng dần tới cao trào
+    import numpy as np, wave
+    from scipy.signal import butter, sosfilt
+    M = MOODS['tin']; sr = 48000; N = int(sr * dur); L = np.zeros(N); Rr = np.zeros(N); rng = np.random.default_rng(7)
+    BEAT = 60 / M['bpm']; BAR = 4 * BEAT; nb = int(dur / BAR) + 1; hz = lambda m: 440 * 2 ** ((m - 69) / 12)
+    lpf = lambda x, f: sosfilt(butter(2, f, 'low', fs=sr, output='sos'), x); hpf = lambda x, f: sosfilt(butter(2, f, 'high', fs=sr, output='sos'), x)
+    def add(x, t, gl, gr=None):
+        a = int(t * sr)
+        if a >= N or a < 0: return
+        x = x[:N - a]; L[a:a + len(x)] += gl * x; Rr[a:a + len(x)] += (gl if gr is None else gr) * x
+    imp = sorted(impacts); peak = max([t for t in imp if t > dur * .6] or [dur * .8])
+    energy = lambda t: .4 + .3 * min(1, t / 10) + .3 * math.exp(-((t - peak) / 10) ** 2)
+    saw = lambda f, m: 2 * ((f * m) % 1) - 1
+    for b in range(nb):   # DRONE: hợp âm thứ trầm, lọc tối, phồng chậm
+        t0 = b * BAR; d = BAR + 1.0; m = np.arange(int(sr * d)) / sr; e = np.minimum(1, m / 1.2) * np.minimum(1, (d - m) / 1.0)
+        for k, q in enumerate(M['ch'][b % 4]):
+            f = hz(q - 12); x = lpf((saw(f * 1.003, m) + saw(f * .997, m)) * .5, 650) * .06 + np.sin(2 * np.pi * f * m) * .03
+            add(x * e, t0, .75 if k % 2 else .55, .55 if k % 2 else .75)
+    for b in range(nb):   # OSTINATO móc 16 (kiểu dây pizz/staccato) — gốc + quãng 8 xen kẽ, sáng dần theo năng lượng
+        for st in range(16):
+            t0 = b * BAR + st * BEAT / 4; e = energy(t0); q = M['root'][b % 4] + (12 if st % 4 == 2 else 24 if st % 8 == 6 else 12 * 0)
+            m = np.arange(int(sr * .16)) / sr; f = hz(q + 12)
+            x = lpf(saw(f, m), 900 + 900 * e) * np.exp(-m * 26); acc = 1.0 if st % 4 == 0 else .6
+            add(x, t0, .085 * acc * e, .07 * acc * e)
+    TK = hpf(rng.standard_normal(int(sr * .012)), 6500) * np.exp(-np.arange(int(sr * .012)) / sr * 400)
+    for b in range(1, nb):   # TÍCH TẮC đồng hồ tin tức (móc 8), rất nhỏ
+        for st in range(8): add(TK, b * BAR + st * BEAT / 2, .035 if st % 2 == 0 else .021, .021 if st % 2 == 0 else .035)   # tích tắc: = 70% mức gốc (anh duyệt)
+    def kick():
+        m = np.arange(int(sr * .4)) / sr; return np.sin(2 * np.pi * np.cumsum(44 + 70 * np.exp(-m * 30)) / sr) * np.exp(-m * 8)
+    K = kick()
+    for b in range(2, nb):   # TRỐNG thưa: phách 1 (+ phách 3 khi căng); mỗi 4 ô nhịp một tiếng "boom" trầm
+        e = energy(b * BAR); add(K, b * BAR, .32)
+        if e > .65: add(K, b * BAR + 2 * BEAT, .22)
+        if b % 4 == 0:
+            m = np.arange(int(sr * 2.0)) / sr; bm = np.sin(2 * np.pi * np.cumsum(40 + 25 * np.exp(-m * 5)) / sr) * np.exp(-m * 2); add(bm, b * BAR, .22)
+    for b in range(0, nb, 2):   # chuông cao thưa (nốt chủ âm hợp âm), tạo cảm giác "bản tin"
+        m = np.arange(int(sr * 1.6)) / sr; f = hz(M['ch'][b % 4][0] + 24)
+        x = (np.sin(2 * np.pi * f * m) + .3 * np.sin(2 * np.pi * 2.76 * f * m) * np.exp(-m * 6)) * np.exp(-m * 2.8); add(x, b * BAR + BEAT * 3.5, .035, .05)
+    for t in imp:   # mốc lớn: riser 1.5 s + hit trầm + cymbal
+        m = np.arange(int(sr * 1.5)) / sr; rs = hpf(rng.standard_normal(len(m)), 2000) * (m / 1.5) ** 3; add(rs, t - 1.5, .05)
+        m = np.arange(int(sr * 2.6)) / sr; cy = hpf(rng.standard_normal(len(m)), 5000) * np.exp(-m * 2.0)
+        sb = np.sin(2 * np.pi * np.cumsum(50 + 35 * np.exp(-m * 9)) / sr) * np.exp(-m * 2.2); add(cy * .05 + sb * .28, t, 1.0)
+    x = np.stack([L, Rr], 1); fi = np.minimum(1, np.arange(N) / (sr * 1.0)); fo = np.minimum(1, (N - np.arange(N)) / (sr * 1.5))
+    x *= (fi * fo)[:, None]; x = hpf(x.T, 30).T; x = x / (np.abs(x).max() + 1e-9) * 10 ** (-1 / 20)
+    w = wave.open(path, 'wb'); w.setnchannels(2); w.setsampwidth(2); w.setframerate(sr); w.writeframes((x * 32767).astype('<i2').tobytes()); w.close()
+def _music_pt(dur, impacts, path):   # nền PHÂN TÍCH: electric piano + pad nhún theo nhịp + groove mềm; mỗi 8 ô nhịp thêm/bớt lớp, có nhịp "hít" trước đoạn mới
+    import numpy as np, wave
+    from scipy.signal import butter, sosfilt
+    M = MOODS['phantich']; sr = 48000; N = int(sr * dur); L = np.zeros(N); Rr = np.zeros(N); rng = np.random.default_rng(5)
+    BEAT = 60 / M['bpm']; BAR = 4 * BEAT; nb = int(dur / BAR) + 1; hz = lambda m: 440 * 2 ** ((m - 69) / 12)
+    lpf = lambda x, f: sosfilt(butter(2, f, 'low', fs=sr, output='sos'), x); hpf = lambda x, f: sosfilt(butter(2, f, 'high', fs=sr, output='sos'), x)
+    def add(x, t, gl, gr=None):
+        a = int(t * sr)
+        if a >= N or a < 0: return
+        x = x[:N - a]; L[a:a + len(x)] += gl * x; Rr[a:a + len(x)] += (gl if gr is None else gr) * x
+    imp = sorted(impacts); peak = max([t for t in imp if t > dur * .6] or [dur * .8]); last = nb - 2
+    sec = lambda b: 0 if b < 2 else 1 if b < 4 else 2 if b < 8 else 3 + ((b // 8) % 2)   # 0 mở · 1 trống · 2 hats · 3/4 đầy đủ (xen kẽ biến tấu)
+    hot = lambda t: math.exp(-((t - peak) / 8) ** 2) > .5
+    brk = lambda b: b % 8 == 7 and b < last   # ô nhịp "hít": bỏ trống nửa sau, lọc tối → đoạn mới bật ra
+    pump = lambda m: 1 - .45 * np.exp(-((m % BEAT) / (BEAT * .32)))   # pad nhún theo phách (sidechain)
+    for b in range(nb):   # PAD mềm nhún theo nhịp
+        t0 = b * BAR; d = BAR + .5; m = np.arange(int(sr * d)) / sr; e = np.minimum(1, m / .4) * np.minimum(1, (d - m) / .5)
+        pm = pump(m) if sec(b) >= 1 else 1
+        for k, q in enumerate(M['ch'][b % 4]):
+            f = hz(q); x = lpf((2 * ((f * 1.004 * m) % 1) - 1 + 2 * ((f * .996 * m) % 1) - 1) * .5, 900 if not brk(b) else 500) * .045
+            add(x * e * pm, t0, .75 if k % 2 else .55, .55 if k % 2 else .75)
+    def ep(f, d):   # electric piano (FM nhẹ, chuông mềm)
+        m = np.arange(int(sr * d)) / sr; mod = np.sin(2 * np.pi * f * 2 * m) * 1.2 * np.exp(-m * 5)
+        return (np.sin(2 * np.pi * f * m + mod) * np.exp(-m * 2.2) + .25 * np.sin(2 * np.pi * f * 2 * m) * np.exp(-m * 6))
+    for b in range(nb):   # EP hợp âm nhịp lệch (phách 1 và móc của phách 2)
+        for off in ((0, BEAT * 1.5) if sec(b) < 3 else (0, BEAT * 1.5, BEAT * 3)):
+            for k, q in enumerate(M['ch'][b % 4]): add(ep(hz(q), 1.4), b * BAR + off, .05, .05)
+    pats = ([0, 2, 1, 3, 2, 1, 3, 2], [0, 1, 2, 3, 3, 2, 1, 2], [1, 3, 2, 0, 2, 3, 1, 3])
+    for b in range(nb):   # PLUCK rải móc 8, đổi hình mỗi 2 ô nhịp; quãng 8 cao ở đoạn đầy đủ / quanh cao trào
+        if sec(b) == 0 and b == 0: continue
+        pat = pats[(b // 2) % 3]
+        for st in range(8):
+            t0 = b * BAR + st * BEAT / 2
+            if brk(b) and st >= 4: continue
+            up = 24 if (sec(b) >= 3 or hot(t0)) and st % 4 == 3 else 12
+            q = M['ch'][b % 4][pat[st]] + up; m = np.arange(int(sr * .5)) / sr; f = hz(q)
+            x = lpf(2 * ((f * m) % 1) - 1, 2400) * np.exp(-m * 9); pn = .3 + .4 * (st % 2); add(x, t0, .045 * (1 - pn), .045 * pn)
+    def kick():
+        m = np.arange(int(sr * .3)) / sr; return np.sin(2 * np.pi * np.cumsum(50 + 80 * np.exp(-m * 35)) / sr) * np.exp(-m * 11)
+    def nz(d, hp, dec): m = np.arange(int(sr * d)) / sr; return hpf(rng.standard_normal(len(m)), hp) * np.exp(-m * dec)
+    K, HH, OH, CL = kick(), lpf(nz(.04, 7000, 110), 12000), lpf(nz(.25, 6500, 12), 11000), lpf(nz(.18, 1200, 22), 5000)
+    for b in range(nb):   # TRỐNG: kick 4 phách mềm · hats móc · clap 2&4 · bass nhịp lệch
+        S_ = sec(b)
+        for qd in range(4):
+            t0 = b * BAR + qd * BEAT
+            if brk(b) and qd >= 2: continue
+            if S_ >= 1: add(K, t0, .26)
+            if S_ >= 2: add(HH, t0 + BEAT / 2, .045, .06)
+            if S_ >= 3 and qd in (1, 3): add(CL, t0, .07)
+            if (S_ == 4 or hot(t0)) and qd == 3: add(OH, t0 + BEAT / 2, .03, .04)
+        if S_ >= 2:
+            f = hz(M['root'][b % 4])
+            for off, g in ((0, .22), (BEAT * .75, .1), (BEAT * 2, .16), (BEAT * 2.75, .1), (BEAT * 3.5, .12)):
+                if brk(b) and off >= BEAT * 2: continue
+                m = np.arange(int(sr * BEAT * .7)) / sr; x = lpf(np.tanh(1.8 * np.sin(2 * np.pi * f * m)), 400) * np.exp(-m * 4); add(x, b * BAR + off, g)
+        if brk(b):   # riser ngắn vào đoạn mới
+            m = np.arange(int(sr * BEAT * 2)) / sr; add(hpf(rng.standard_normal(len(m)), 3000) * (m / m[-1]) ** 3, b * BAR + BEAT * 2, .025)
+    for t in imp:   # mốc lớn: riser nhẹ + hit trầm mềm
+        m = np.arange(int(sr * 1.2)) / sr; add(hpf(rng.standard_normal(len(m)), 2500) * (m / 1.2) ** 3, t - 1.2, .03)
+        m = np.arange(int(sr * 1.8)) / sr; add(np.sin(2 * np.pi * np.cumsum(52 + 30 * np.exp(-m * 9)) / sr) * np.exp(-m * 2.6), t, .18)
+    x = np.stack([L, Rr], 1); fi = np.minimum(1, np.arange(N) / (sr * .8)); fo = np.minimum(1, (N - np.arange(N)) / (sr * 1.5))
+    x *= (fi * fo)[:, None]; x = hpf(x.T, 30).T; x = x / (np.abs(x).max() + 1e-9) * 10 ** (-1 / 20)
+    w = wave.open(path, 'wb'); w.setnchannels(2); w.setsampwidth(2); w.setframerate(sr); w.writeframes((x * 32767).astype('<i2').tobytes()); w.close()
 def _music(dur, impacts, mood, path):
+    if mood == 'tin': return _music_tin(dur, impacts, path)
+    if mood == 'phantich': return _music_pt(dur, impacts, path)
     import numpy as np, wave
     from scipy.signal import butter, sosfilt
     M = MOODS[mood]; sr = 48000; N = int(sr * dur); L = np.zeros(N); Rr = np.zeros(N); rng = np.random.default_rng(11)
@@ -275,19 +396,35 @@ def _music(dur, impacts, mood, path):
     x *= (fi * fo)[:, None]; x = hpf(x.T, 30).T; x = x / (np.abs(x).max() + 1e-9) * 10 ** (-1 / 20)
     w = wave.open(path, 'wb'); w.setnchannels(2); w.setsampwidth(2); w.setframerate(sr); w.writeframes((x * 32767).astype('<i2').tobytes()); w.close()
 def _remix(DA):   # thay nhạc mặc định bằng nhạc theo mood (P.nhac), trộn lại đúng như vucut.py audio (nghẹt · tắt trước câu đắt · nhường giọng)
-    nf = os.path.join(DA, 'nhac.json'); mood = json.load(open(nf))['mood'] if os.path.exists(nf) else 'toi'
+    nf = os.path.join(DA, 'nhac.json'); mood = json.load(open(nf))['mood'] if os.path.exists(nf) else NHAC_MACDINH
     if mood == 'toi': return
     j = lambda *x: os.path.join(DA, *x); plan = json.load(open(j('audio.json'), encoding='utf-8')) if os.path.exists(j('audio.json')) else {}
     T = json.load(open(j('state.json')))['T']; _music(T, plan.get('impacts', []), mood, j('music.wav'))
+    if os.path.exists(j('cues_lite.json')):   # hiệu ứng trong lời nhỏ lại (SFX_DB)
+        subprocess.run([*PY().split(' ')[:3][:1], '-X', 'utf8', os.path.join(VC(), 'scripts', 'sfx_mix.py'), j('voice.wav'), j('cues_lite.json'), j('sfx'), j('voice_sfx.m4a'), '--sfx-db', str(SFX_DB)], check=True)
     btw = lambda W: '+'.join(f'between(t,{x},{y})' for x, y in W) or '0'; Wm, Dk = btw(plan.get('muffle', [])), btw(plan.get('duck', []))
-    fc = (f"[1:a]aresample=48000,volume=-12dB,asplit=2[mA][mB];[mA]volume='if({Wm},0,1)':eval=frame[full];"
+    g = MOODS[mood].get('gain', -12)   # nền dưới giọng: nhạc khoét 1–4 kHz (dải rõ lời), nhường giọng khi anh nói
+    fc = (f"[1:a]aresample=48000,volume={g}dB,equalizer=f=2200:t=o:w=1.6:g=-5,asplit=2[mA][mB];[mA]volume='if({Wm},0,1)':eval=frame[full];"
           f"[mB]lowpass=f=520,lowpass=f=520,volume=2dB,volume='if({Wm},1,0)':eval=frame[muff];"
           f"[full][muff]amix=inputs=2:normalize=0,volume='if({Dk},0.03,1)':eval=frame[m];"
-          f"[2:a]pan=stereo|c0=c0|c1=c0[key];[m][key]sidechaincompress=threshold=0.15:ratio=3:attack=80:release=650:knee=6[md];"
-          f"[0:a]aresample=48000,pan=stereo|c0=c0|c1=c0[v];[v][md]amix=inputs=2:normalize=0:duration=first,alimiter=limit=0.95,loudnorm=I=-14:TP=-1.5:LRA=11[out]")
+          f"[2:a]pan=stereo|c0=c0|c1=c0[key];[m][key]sidechaincompress=threshold=0.1:ratio=2.5:attack=60:release=700:knee=6[md];"
+          f"[0:a]aresample=48000,pan=stereo|c0=c0|c1=c0,highpass=f=80,acompressor=threshold=-22dB:ratio=3:attack=8:release=150:makeup=3dB,equalizer=f=3000:t=o:w=1.2:g=2[v];[v][md]amix=inputs=2:normalize=0:duration=first,alimiter=limit=0.95,loudnorm=I={LUFS}:TP={TP}:LRA=9[out]")
     subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', j('voice_sfx.m4a'), '-i', j('music.wav'), '-i', j('voice.wav'), '-filter_complex', fc,
                     '-map', '[out]', '-ar', '48000', '-c:a', 'aac', '-b:a', '256k', j('final_audio.m4a')], check=True)
     print(f'xong → nhạc nền mood "{mood}": {MOODS[mood]["desc"]}')
+
+def _layer(DA):   # lớp âm điện ảnh ở mức CINE_DB (thay cine_sfx --layer để giữ mức anh duyệt)
+    j = lambda *x: os.path.join(DA, *x); cues = json.load(open(j('cine_cues.json'))) if os.path.exists(j('cine_cues.json')) else []
+    base = j('final_audio_base.m4a')
+    if not os.path.exists(base): shutil.copy(j('final_audio.m4a'), base)
+    if not cues: shutil.copy(base, j('final_audio.m4a')); print('không có âm điện ảnh'); return
+    ins, fc = ['-i', base], []
+    for k, c in enumerate(cues):
+        ins += ['-i', j('sfx', c['s'] + '.wav')]; ms = max(0, int(c['t'] * 1000))
+        fc.append(f"[{k + 1}:a]aresample=48000,volume={CINE_DB.get(c['s'], CINE_DB_KHAC)}dB,adelay={ms}|{ms},pan=stereo|c0=c0|c1=c0[c{k}]")
+    fc.append('[0:a]' + ''.join(f'[c{k}]' for k in range(len(cues))) + f'amix=inputs={len(cues) + 1}:normalize=0:duration=first,alimiter=limit=0.95,loudnorm=I={LUFS}:TP={TP}:LRA=9[o]')
+    subprocess.run(['ffmpeg', '-v', 'error', '-y', *ins, '-filter_complex', ';'.join(fc), '-map', '[o]', '-ar', '48000', '-c:a', 'aac', '-b:a', '256k', j('final_audio.m4a')], check=True)
+    print(f'xong → lớp điện ảnh {len(cues)} âm:', ', '.join(f"{c['s']}@{c['t']}" for c in cues))
 
 def out(DA):
     DA = os.path.abspath(os.path.expanduser(DA))
@@ -296,7 +433,7 @@ def out(DA):
     sh(f'python3 {T_DIR}/cine_sfx.py sfx', cwd=DA, tail=1)
     sh(f'{PY()} audio {DA}', keep='LUFS|✖')
     _remix(DA)
-    sh(f'python3 {T_DIR}/cine_sfx.py --layer {DA}', tail=1)
+    _layer(DA)
     sp, dn = os.path.join(DA, 'splits.json'), os.path.join(DA, 'splits.done.json')
     s = open(sp).read() if os.path.exists(sp) else ''
     if s != (open(dn).read() if os.path.exists(dn) else None):
