@@ -804,12 +804,14 @@ def mat(a, b, nhan=None, push=False):   # cảnh mặt: tự reset zoom, nhấn 
     if nhan is not None: s += f"VC.punch({nhan},{_pack()['punch']});"
     V.J.append(s)
 NEN = {   # nền cảnh đồ hoạ (P.nen) — tối giản, sang; chữ trắng/vàng của bộ R. vẫn nổi
+    'do':   'url(\'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22300%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%22.85%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3CfeColorMatrix values=%220 0 0 0 .95 0 0 0 0 .12 0 0 0 0 .14 0 0 0 9 -4.6%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22 opacity=%22.35%22/%3E%3C/svg%3E\') 0 0/300px 300px,radial-gradient(70% 18% at 50% 104%,rgba(160,14,22,.4),rgba(160,14,22,0) 70%),radial-gradient(70% 50% at 100% 60%,#8a0c12 0%,#4a060a 40%,rgba(10,2,3,0) 80%),linear-gradient(160deg,#070203 0%,#110304 60%,#170305 100%)',   # ĐỎ TRẦM hạt nhiễu — MẶC ĐỊNH (anh duyệt 23/11/2026)
+    'do_ruc': 'url(\'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22300%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%22.85%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3CfeColorMatrix values=%220 0 0 0 .95 0 0 0 0 .12 0 0 0 0 .14 0 0 0 9 -4.6%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22 opacity=%22.55%22/%3E%3C/svg%3E\') 0 0/300px 300px,radial-gradient(70% 22% at 50% 104%,rgba(200,20,28,.55),rgba(200,20,28,0) 70%),radial-gradient(85% 60% at 92% 52%,#d0161d 0%,#8e0c12 30%,#3a0508 62%,rgba(10,2,3,0) 88%),linear-gradient(160deg,#060102 0%,#120204 45%,#1c0306 100%)',   # đỏ rực sát ảnh mẫu Black Friday
     'den':  '#0d0d0f',
     'than': 'radial-gradient(120% 75% at 28% 16%,#27221c 0%,#16130f 46%,#0a0907 100%)',
     'dem':  'radial-gradient(120% 75% at 28% 16%,#1a2633 0%,#0f1720 48%,#070a0e 100%)',
     'da':   'radial-gradient(85% 45% at 50% -4%,rgba(232,194,122,.13),rgba(232,194,122,0) 70%),radial-gradient(140% 90% at 50% 40%,#1c1c1f 0%,#121214 55%,#08080a 100%)',
 }
-def nen(ten='than'):   # P.nen('than'|'dem'|'da'|'den') đầu scenes.py — đổi nền mọi hình R.
+def nen(ten='do'):   # P.nen('do'|'do_ruc'|'than'|'dem'|'da'|'den') đầu scenes.py — đổi nền mọi hình R.
     R().BG = NEN.get(ten, ten)
 CTA_TEN, CTA_CHUC = 'Lê Phong Vũ', 'GĐDA · Tây Nguyên Investment'
 FOIL = ("background:linear-gradient(100deg,#7a5a24 0%,#c9a25a 14%,#f6e2a2 24%,#fff6d6 28%,#d9b468 38%,#8c6a2c 52%,#e8c983 64%,#fff1c2 70%,#b88f45 82%,#6e5020 100%);"
@@ -817,7 +819,7 @@ FOIL = ("background:linear-gradient(100deg,#7a5a24 0%,#c9a25a 14%,#f6e2a2 24%,#f
         "padding:.22em .04em .26em;margin:-.22em -.04em -.26em;filter:drop-shadow(0 1.5px 0 rgba(70,48,12,.95)) drop-shadow(0 10px 22px rgba(0,0,0,.55))")   # đệm để dấu tiếng Việt (Ị, Ũ, Ỗ) không bị cắt
 def _foil_js(sel, t, d=1.6): return f"tl.fromTo('{sel}',{{backgroundPosition:'100% 0'}},{{backgroundPosition:'0% 0',duration:{d},ease:'power2.inOut'}},{t:.2f});"
 def cta(a, b, follow, hoi=None, chu=(), ten=CTA_TEN, chuc=CTA_CHUC, nut='Follow', xong='Đã follow', hoi_txt=('ANH CHỊ', 'CÓ CÂU HỎI?')):
-    """MẪU KÊU GỌI CUỐI VIDEO — cảnh đồ hoạ nền than + khung nhân vật nhỏ, chữ NHŨ VÀNG:
+    """MẪU KÊU GỌI CUỐI VIDEO — cảnh đồ hoạ nền mặc định + khung nhân vật nhỏ, chữ NHŨ VÀNG:
     hoi=giây câu hỏi/bình luận → chữ nhũ "ANH CHỊ / CÓ CÂU HỎI?" + bong bóng bình luận 3D đang gõ + "BÌNH LUẬN BÊN DƯỚI ↓" (hoi_txt chỉ chữ có trong lời)
     follow=giây chữ "Follow" → chữ nhũ "FOLLOW VŨ" + thẻ kính (chữ ký V · tên · chức danh · nút Follow tự bấm → Đã follow)
     chu=[(CHỮ, giây)] ≤3 chủ đề nói ở câu follow → từng dòng tick vàng"""
@@ -914,7 +916,7 @@ def X():
 V = DA_ = None; WD = []; K = 0; SUBS = []; KIN = []; EXTRA = []; SPK = []
 def init(v, da):
     global V, DA_, WD
-    V, DA_, WD = v, da, _load(da); nen('than')   # nền mặc định: THAN ẤM (anh duyệt 19/11/2026)
+    V, DA_, WD = v, da, _load(da); nen('do')   # nền mặc định: ĐỎ TRẦM hạt nhiễu (anh duyệt 23/11/2026; trước: than)
 PEND = []   # phần còn lại của 1 từ gộp trong lời ('Đắk Lắk') khi subs.py viết tách ('Đắk Lắk' 2 chữ)
 def _take(tok, spec):
     global K
