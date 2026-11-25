@@ -321,13 +321,13 @@ def vang(i, a, b, t0, value, unit='tỷ đồng', kicker='', title='', note='', 
         + f'<radialGradient id="{i}fl" cx=".5" cy=".4" r=".6"><stop offset="0" stop-color="hsl(350,35%,22%)"/><stop offset="1" stop-color="hsl(350,35%,8%)" stop-opacity="0"/></radialGradient>' + _lg(f'{i}cn', 'hsl(48,95%,70%)', 'hsl(36,85%,38%)', 1, 1) + '</defs>'
     z = int(min(150, (600 - (_w(unit, 36) + 16)) / _w(value, 1)))
     NY = 360 if title else 300; z = min(z, 130)
-    s += _head(kicker, title) + _t(60, NY, value, z, cls='nv', w=800) + _t(60 + _w(value, z) + 14, NY, unit, 36, MUT, cls='nu', w=700)
+    s += _head(kicker, title); NUM = _t(60, NY, value, z, cls='nv', w=800) + _t(60 + _w(value, z) + 14, NY, unit, 36, MUT, cls='nu', w=700)
     OY = 560 if title else 520; I = _iso(360, OY, 68); bars = []
     for lv, row in enumerate(((0, 1, 2), (.5, 1.5), (1,))):
         for c in row: bars.append((lv, c))
     random.seed(2)
     s += ''.join(f'<circle class="bk{k % 3}" cx="{random.uniform(80, 640):.0f}" cy="{random.uniform(OY - 170, OY + 60):.0f}" r="{random.uniform(8, 26):.0f}" fill="hsl(44,90%,60%)" opacity="{random.uniform(.06, .16):.2f}" filter="url(#{i}sf)"/>' for k in range(14))
-    s += (f'<ellipse cx="360" cy="{OY + 100}" rx="290" ry="58" fill="url(#{i}fl)"/><ellipse cx="360" cy="{OY + 105}" rx="230" ry="30" fill="#000" opacity=".6" filter="url(#{i}sf)"/>'
+    s += (f'<ellipse cx="360" cy="{OY + 100}" rx="290" ry="58" fill="url(#{i}fl)"/><ellipse cx="360" cy="{OY + 105}" rx="170" ry="18" fill="#000" opacity=".32" filter="url(#{i}sf)"/>'
           f'<ellipse cx="360" cy="{OY + 92}" rx="200" ry="10" fill="hsl(44,90%,60%)" opacity=".12" filter="url(#{i}sf)"/>')
     for lv, c in bars:
         h = .55; x0, y0, zz = c * 1.2 - 1.8, -1.1, lv * .55
@@ -346,10 +346,11 @@ def vang(i, a, b, t0, value, unit='tỷ đồng', kicker='', title='', note='', 
               f'<ellipse cx="{cx_}" cy="{cy_}" rx="17" ry="5.5" fill="none" stroke="hsl(40,80%,40%)" stroke-width="1"/><ellipse cx="{cx_ - 7}" cy="{cy_ - 2}" rx="6" ry="1.6" fill="#fff" opacity=".5"/></g>')
     for k, (px, py) in enumerate(((-1.2, -.6, 1.15), (.2, .4, .6), (1.0, -.8, 1.7))[:3] and ((I(-1.2, -.2, 1.65)), I(.4, .6, .6), I(1.3, -.6, 1.1))):
         s += f'<path class="gn{k}" d="M{px:.0f} {py - 16:.0f} Q{px:.0f} {py:.0f} {px + 16:.0f} {py:.0f} Q{px:.0f} {py:.0f} {px:.0f} {py + 16:.0f} Q{px:.0f} {py:.0f} {px - 16:.0f} {py:.0f} Q{px:.0f} {py:.0f} {px:.0f} {py - 16:.0f} Z" fill="#fff" filter="url(#{i}gl)"/>'
+    s += NUM
     if note: s += _t(60, 668, note, 22, MUT, w=600)
     s += _t(60, 690, source, 15, MUT, w=600) if source else ''
-    j = _vis(i, a, b) + _headj(i, a, title) + [_num(i, 'nv', t0 + .2, value, 1.3), _rv(f'#{i} .nu', t0 + .4), S(f'#{i} .bar', 0, y=-200, opacity=0),
-                                                T(f'#{i} .bar', t0, y=0, opacity=1, duration=.5, ease='bounce.out', stagger=.15),
+    j = _vis(i, a, b) + _headj(i, a, title) + [_num(i, 'nv', t0 + .2, value, 1.3), _rv(f'#{i} .nu', t0 + .4), S(f'#{i} .bar', 0, y=-140, opacity=0), T(f'#{i} .bar', t0, opacity=1, duration=.1, stagger=.15),
+                                                T(f'#{i} .bar', t0, y=0, duration=.5, ease='bounce.out', stagger=.15),
                                                 S(f'#{i} .cn', 0, opacity=0, y=-60), T(f'#{i} .cn', t0 + 1.0, opacity=1, y=0, duration=.45, ease='bounce.out', stagger=.08),
                                                 T(f'#{i} .bk0', a, y=-30, duration=b - a, ease='none'), T(f'#{i} .bk1', a, y=-18, x=10, duration=b - a, ease='none'), T(f'#{i} .bk2', a, y=-42, duration=b - a, ease='none'),
                                                 ] + [S(f'#{i} .gn{k}', 0, scale=0, transformOrigin='50% 50%') + T(f'#{i} .gn{k}', t0 + 1.2 + k * .25, scale=1, duration=.25, yoyo=True, repeat=1, ease='power2.out') for k in range(3)]
@@ -2830,3 +2831,102 @@ def bao(i, a, b, img, outlet='BÁO XÂY DỰNG', head='', cap='', author='', val
               + _t(bx + 14, by + 64, value, 44, '#fff', cls='nv', w=800) + (_t(bx + 20 + _w(value, 44), by + 64, unit, 22, GOLD, cls='nu', w=800) if unit else '') + '</g>')
         j += [_qpop(i, 'bd', tn - .25, .45, '0% 100%')] + _numj(i, tn, value); cues.append((tn, 'count'))
     return _out(i, a, b, 'r_bao', s, j), j, cues
+
+
+# ---------------------------------------------------------------- BỔ SUNG 25/11/2026
+def duan4(i, a, b, t0=None, plots=(), items=(), t_save=None, kicker='DỰ ÁN', title='', source=''):
+    """khu đất chia 4 ô dự án 3D: điện mặt trời (2 ô), sân sát hạch lái xe có xe chạy + cọc, nhà máy (phân bón) có silo + khói;
+    plots=[(kind 'pv'|'pv2'|'lx'|'nm', t)] ô hiện theo lời · items=[(kind, NHÃN, t)] nhãn từng dự án · t_save → nhãn LƯU LẠI"""
+    sc, Y0, _ = _qL(title, ''); I = _iso(360, Y0, sc)
+    s = _qhead(i, kicker, title, _lg(f'{i}pv', 'hsl(215,60%,42%)', 'hsl(220,65%,20%)', 1, 1)) + _ground(I, i, 0, 0, 10, 10, 'hsl(85,22%,34%)')
+    s += _qroadx(I, 0, 10, 5, .45, 'rx') + _qroady(I, 0, 10, 5, .45, 'ry')
+    Q = {'pv': (0, 0), 'lx': (5.2, 0), 'nm': (0, 5.2), 'pv2': (5.2, 5.2)}
+    def pv(x0, y0):
+        g = ''
+        for r in range(4):
+            for c in range(2):
+                x, y = x0 + .35 + c * 2.0, y0 + .4 + r * 1.0
+                g += (f'<polygon points="{_pt([I(x, y, .45), I(x + 1.75, y, .45), I(x + 1.75, y + .6, .12), I(x, y + .6, .12)])}" fill="url(#{i}pv)" stroke="hsl(210,30%,72%)" stroke-width="1"/>'
+                      f'<path d="M{_pt([I(x + .58, y, .45), I(x + .58, y + .6, .12)])} M{_pt([I(x + 1.17, y, .45), I(x + 1.17, y + .6, .12)])}" stroke="hsl(210,30%,72%)" stroke-width=".7"/>')
+        return g
+    def lx(x0, y0):
+        g = f'<polygon points="{_P4(I, x0 + .3, y0 + .3, x0 + 4.4, y0 + 4.4, .01)}" fill="#2f3237"/>'
+        g += f'<polygon points="{_P4(I, x0 + 1.2, y0 + 1.2, x0 + 3.5, y0 + 3.5, .02)}" fill="hsl(95,25%,36%)"/>'
+        g += f'<path d="M{_pt([I(x0 + .75, y0 + .75, .03), I(x0 + 3.95, y0 + .75, .03), I(x0 + 3.95, y0 + 3.95, .03), I(x0 + .75, y0 + 3.95, .03)])}Z" fill="none" stroke="#f1ead0" stroke-width="2" stroke-dasharray="9 8"/>'
+        for k, (x, y) in enumerate([(x0 + 1.0, y0 + 4.1), (x0 + 2.2, y0 + 4.1), (x0 + 3.4, y0 + 4.1), (x0 + 4.15, y0 + 2.2)]):
+            cx_, cy_ = I(x, y, 0)
+            g += f'<path d="M{cx_ - 6:.0f} {cy_:.0f} L{cx_:.0f} {cy_ - 18:.0f} L{cx_ + 6:.0f} {cy_:.0f}Z" fill="hsl(24,95%,55%)"/><rect x="{cx_ - 4:.0f}" y="{cy_ - 10:.0f}" width="8" height="3" fill="#fff"/>'
+        return g + f'<g class="car">{_car(I, x0 + .9, y0 + .62, True, "hsl(44,90%,55%)", "cc")}</g>'
+    def nm(x0, y0):
+        g = _box(I, x0 + .6, y0 + 1.0, 2.6, 2.6, 1.1, 'hsl(210,8%,70%)', 'hsl(210,8%,58%)', 'hsl(210,10%,42%)')
+        for k in range(4): g += f'<polygon points="{_pt([I(x0 + .6 + k * .65, y0 + 1.0, 1.1), I(x0 + .6 + k * .65, y0 + 3.6, 1.1), I(x0 + .95 + k * .65, y0 + 3.6, 1.45), I(x0 + .95 + k * .65, y0 + 1.0, 1.45)])}" fill="hsl(210,10%,{62 + k % 2 * 8}%)"/>'
+        sx, sy = I(x0 + 3.9, y0 + 1.4, 0); g += _qcyl(sx, sy, 16, 7, 70, 'hsl(40,10%,72%)', 'hsl(40,10%,86%)')
+        sx2, sy2 = I(x0 + 3.9, y0 + 2.4, 0); g += _qcyl(sx2, sy2, 16, 7, 60, 'hsl(40,10%,66%)', 'hsl(40,10%,84%)')
+        cx_, cy_ = I(x0 + 1.0, y0 + 1.3, 1.45)
+        g += f'<rect x="{cx_ - 5:.0f}" y="{cy_ - 60:.0f}" width="10" height="60" fill="hsl(8,55%,45%)"/><rect x="{cx_ - 5:.0f}" y="{cy_ - 52:.0f}" width="10" height="5" fill="#eee"/>'
+        g += ''.join(f'<circle class="sm{k}" cx="{cx_ + k * 9:.0f}" cy="{cy_ - 70 - k * 16:.0f}" r="{8 + k * 4}" fill="#e9ecef" opacity=".55"/>' for k in range(3))
+        return g
+    FN = {'pv': pv, 'pv2': pv, 'lx': lx, 'nm': nm}
+    for k in ('pv', 'lx', 'nm', 'pv2'): s += f'<g class="q{k}">{FN[k](*Q[k])}</g>'
+    LP = {'pv': I(2.5, 2.4, 1.8), 'lx': I(7.6, 2.4, 1.6), 'nm': I(2.4, 7.6, 3.0), 'pv2': I(7.6, 7.6, 1.6)}
+    for k, (kind, lab, t) in enumerate(list(items)[:6]): s += _qpill(LP[kind][0], LP[kind][1], lab, 'rgba(14,13,12,.85)', GOLD, f'lb{k}', 15)
+    if t_save is not None: s += _qpill(60, 128, 'LƯU LẠI', GOLD, '#111', 'sv', 14, 'start')
+    s += _src(source)
+    j = _vis(i, a, b) + _headj(i, a, title) + [_rv(f'#{i} .gd', a + .05, 30, .7), _qfade(i, 'rx', a + .3), _qfade(i, 'ry', a + .3)]
+    for k in ('pv', 'lx', 'nm', 'pv2'):
+        t = dict(plots).get(k, a + .4); j.append(_rv(f'#{i} .q{k}', t, 22, .6))
+    dx, dy = 2.6 * .866 * sc, 2.6 * .5 * sc; tl_ = dict(plots).get('lx', a + .4) + .3
+    j.append(S(f'#{i} .car', 0, x=0, y=0) + T(f'#{i} .car', tl_, x=dx, y=dy, duration=max(.5, b - tl_ - .2), ease='sine.inOut'))
+    for k in range(3): j.append(T(f'#{i} .sm{k}', a + k * .3, y=-60, opacity=.1, duration=max(1, b - a), ease='none'))
+    for k, (kind, lab, t) in enumerate(list(items)[:6]): j.append(_rv(f'#{i} .lb{k}', t, 10, .4))
+    if t_save is not None: j.append(_qpop(i, 'sv', t_save, .4, '0% 50%'))
+    return _out(i, a, b, 'r_duan4', s, j), j, [(a, 'air')] + [(t, 'thud') for _, t in plots] + ([(t_save, 'shimmer')] if t_save else [])
+
+
+def trucot(i, a, b, cols=(), t_roof=None, roof='', t_save=None, kicker='TRỤ CỘT', title='', source=''):
+    """công trình đá cẩm thạch: bệ bậc thềm, các cột trụ dựng lên theo lời (mỗi cột 1 nhãn + vai trò), mái tam giác hạ xuống chốt;
+    cols=[(NHÃN, vai trò, t)] ≤4 · roof = chữ trên mái (chỉ chữ có trong lời) · t_save → nhãn LƯU LẠI"""
+    s = (_defs(i) + _lg(f'{i}mb', '#f3efe6', '#8f887b', 1, 0) + _lg(f'{i}st', '#d9d3c6', '#77705f') + _lg(f'{i}rf', 'hsl(42,40%,86%)', 'hsl(38,30%,58%)')
+         + _lg(f'{i}gd', 'hsl(46,95%,72%)', 'hsl(38,80%,46%)') + '</defs>' + _head(kicker, title))
+    n = max(1, len(cols[:4])); X = [360 + (k - (n - 1) / 2) * 142 for k in range(n)]
+    s += '<g class="bs" filter="url(#%ssh)">' % i + ''.join(f'<rect x="{360 - w / 2:.0f}" y="{y}" width="{w}" height="15" fill="url(#{i}st)"/><rect x="{360 - w / 2:.0f}" y="{y}" width="{w}" height="3" fill="#fff" opacity=".35"/>'
+                                                     for w, y in ((560, 552), (600, 567), (640, 582))) + '</g>'
+    for k, x in enumerate(X):
+        s += (f'<g class="c{k}" filter="url(#{i}sh)"><rect x="{x - 44:.0f}" y="536" width="88" height="16" fill="url(#{i}st)"/>'
+              f'<rect x="{x - 30:.0f}" y="378" width="60" height="158" fill="url(#{i}mb)"/>'
+              + ''.join(f'<line x1="{x - 18 + q * 12:.0f}" y1="380" x2="{x - 18 + q * 12:.0f}" y2="534" stroke="#000" stroke-opacity=".13" stroke-width="2"/>' for q in range(4))
+              + f'<rect x="{x - 40:.0f}" y="364" width="80" height="14" fill="url(#{i}st)"/><rect x="{x - 46:.0f}" y="356" width="92" height="9" fill="url(#{i}mb)"/></g>')
+    s += (f'<g class="rf" filter="url(#{i}sh)"><rect x="70" y="334" width="580" height="22" fill="url(#{i}rf)"/><polygon points="58,334 662,334 360,278" fill="url(#{i}rf)"/>'
+          f'<polygon points="96,328 624,328 360,288" fill="#000" opacity=".12"/>' + (_t(360, 323, roof, 22, 'hsl(34,70%,28%)', 'middle', w=900, ls=4) if roof else '') + '</g>')
+    for k, ((lab, role, t), x) in enumerate(zip(cols[:4], X)):
+        s += f'<g class="l{k}">' + _t(x, 626, lab, 16, GOLD, 'middle', w=900, ls=.5) + (_t(x, 650, role, 14, MUT, 'middle', w=700) if role else '') + '</g>'
+    if t_save is not None: s += _qpill(60, 128, 'LƯU LẠI', GOLD, '#111', 'sv', 14, 'start')
+    j = _vis(i, a, b) + _headj(i, a, title) + [_rv(f'#{i} .bs', a + .05, 30, .7)]
+    for k, (lab, role, t) in enumerate(cols[:4]): j += [_qgrow(i, f'c{k}', t, .7, 'back.out(1.3)'), _rv(f'#{i} .l{k}', t + .15, 10, .4)]
+    tr = t_roof if t_roof is not None else (cols[-1][2] + .7 if cols else a + .5)
+    j.append(S(f'#{i} .rf', 0, y=-90, opacity=0) + T(f'#{i} .rf', tr, y=0, opacity=1, duration=.8, ease='bounce.out'))
+    if t_save is not None: j.append(_qpop(i, 'sv', t_save, .4, '0% 50%'))
+    return _out(i, a, b, 'r_trucot', s, j), j, [(t, 'thud') for _, _, t in cols[:4]] + [(tr + .3, 'block')] + ([(t_save, 'shimmer')] if t_save else [])
+
+
+def haihoa(i, a, b, items=(), t_core=None, core='', kicker='ĐỊNH HƯỚNG', title='', source=''):
+    """3 vòng kim loại đan nhau (vàng · bạc · xanh lá) tự vẽ theo lời, mỗi vòng 1 nhãn; lõi giao nhau phát sáng + chữ core ở t_core;
+    items=[(NHÃN, t)] đúng 3 (chỉ chữ có trong lời)"""
+    C = [(282, 410), (438, 410), (360, 545)]; R_ = 100; L = 2 * math.pi * R_
+    COL = [('hsl(46,95%,70%)', 'hsl(38,80%,40%)'), ('hsl(210,15%,92%)', 'hsl(210,10%,52%)'), ('hsl(140,60%,60%)', 'hsl(150,60%,28%)')]
+    s = _defs(i) + ''.join(_lg(f'{i}r{k}', c0, c1, 1, 1) for k, (c0, c1) in enumerate(COL)) + _rg(f'{i}cg', 'hsl(48,100%,85%)', 'hsl(40,90%,50%)', .5, .5) + '</defs>' + _head(kicker, title)
+    s += f'<circle class="cg" cx="360" cy="455" r="46" fill="url(#{i}cg)" opacity=".0" filter="url(#{i}sf)"/>'
+    for k, (x, y) in enumerate(C):
+        s += (f'<g filter="url(#{i}sh)"><circle class="r{k}" cx="{x}" cy="{y}" r="{R_}" fill="none" stroke="url(#{i}r{k})" stroke-width="22" transform="rotate(-90 {x} {y})"/></g>'
+              f'<circle class="h{k}" cx="{x}" cy="{y}" r="{R_ + 6}" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="2" transform="rotate(-90 {x} {y})"/>')
+    LP = [(228, 392), (492, 392), (360, 600)]
+    for k, ((lab, t), (x, y)) in enumerate(zip(items[:3], LP)): s += f'<g class="l{k}">' + _t(x, y, lab, 19, FG, 'middle', w=900, ls=1) + '</g>'
+    if core: s += f'<g class="cc">' + _t(360, 462, core, 17, '#1a1408', 'middle', w=900, ls=1) + '</g>'
+    s += _note(source)
+    j = _vis(i, a, b) + _headj(i, a, title)
+    for k, (lab, t) in enumerate(items[:3]):
+        j += [_qdraw(i, f'r{k}', t - .25, L, .9), _qdraw(i, f'h{k}', t - .15, 2 * math.pi * (R_ + 6), .9), _rv(f'#{i} .l{k}', t + .2, 10, .4)]
+    tc = t_core if t_core is not None else (items[-1][1] + .8 if items else a + .5)
+    j += [S(f'#{i} .cg', 0, opacity=0, scale=.3, transformOrigin='360px 455px') + T(f'#{i} .cg', tc, opacity=.95, scale=1, duration=.7, ease='back.out(2)')]
+    if core: j.append(_qpop(i, 'cc', tc + .15, .4, '50% 50%'))
+    return _out(i, a, b, 'r_haihoa', s, j), j, [(t - .2, 'air') for _, t in items[:3]] + [(tc, 'shimmer')]
