@@ -13,8 +13,7 @@ def sh(cmd, keep=None, tail=None, cwd=None):
     if r.returncode: print('\n'.join((r.stdout + r.stderr).splitlines()[-15:])); sys.exit(f'✖ lỗi lệnh (mã {r.returncode}): {cmd[:120]}')
 def PY(): return f'python3 -X utf8 {VC()}/scripts/vucut.py'
 
-CSS = r"""#pip{border:0!important;border-radius:16px!important;box-shadow:0 0 0 1px rgba(255,255,255,.18),0 10px 28px rgba(0,0,0,.55),0 2px 6px rgba(0,0,0,.35)!important}
-#pip:after{content:"";position:absolute;left:14px;bottom:12px;width:26px;height:2px;border-radius:2px;background:#E8C27A;opacity:.9;z-index:2}
+CSS = r"""#pip{left:426px!important;top:650px!important;width:200px!important;height:250px!important;border:0!important;border-radius:0!important;box-shadow:none!important;background:transparent!important;-webkit-mask-image:url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMjUwIiB2aWV3Qm94PSIwIDAgMjAwIDI1MCI+PHBhdGggZD0iTTI0IDEwIEgxNzYgUTE5MiAxMCAxOTIgMjYgVjIyMiBRMTkyIDIzOCAxNzYgMjM4IEgyNCBROCAyMzggOCAyMjIgVjI2IFE4IDEwIDI0IDEwIFoiIGZpbGw9IiNmZmYiLz48L3N2Zz4=)!important;-webkit-mask-size:100% 100%!important;mask-image:url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMjUwIiB2aWV3Qm94PSIwIDAgMjAwIDI1MCI+PHBhdGggZD0iTTI0IDEwIEgxNzYgUTE5MiAxMCAxOTIgMjYgVjIyMiBRMTkyIDIzOCAxNzYgMjM4IEgyNCBROCAyMzggOCAyMjIgVjI2IFE4IDEwIDI0IDEwIFoiIGZpbGw9IiNmZmYiLz48L3N2Zz4=)!important;mask-size:100% 100%!important}#pip:after{content:""!important;position:absolute!important;left:0!important;top:0!important;width:200px!important;height:250px!important;bottom:auto!important;border-radius:0!important;opacity:1!important;z-index:3!important;background:url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMjUwIiB2aWV3Qm94PSIwIDAgMjAwIDI1MCI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJiYXIiIHgxPSIwIiB5MT0iMCIgeDI9IjAiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiMwYjBjMTAiIHN0b3Atb3BhY2l0eT0iLjI1Ii8+PHN0b3Agb2Zmc2V0PSIuMzUiIHN0b3AtY29sb3I9IiMwYjBjMTAiIHN0b3Atb3BhY2l0eT0iLjY2Ii8+PHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjMGIwYzEwIiBzdG9wLW9wYWNpdHk9Ii43MiIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPgo8cGF0aCBkPSJNOCAyMDAgSDE5MiBWMjIyIFExOTIgMjM4IDE3NiAyMzggSDI0IFE4IDIzOCA4IDIyMiBaIiBmaWxsPSJ1cmwoI2JhcikiLz4KPGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnYiIgeDE9IjAiIHkxPSIwIiB4Mj0iMCIgeTI9IjEiPjxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI0ZGRjFDNCIvPjxzdG9wIG9mZnNldD0iLjM4IiBzdG9wLWNvbG9yPSIjRjJDQzc0Ii8+PHN0b3Agb2Zmc2V0PSIuNjIiIHN0b3AtY29sb3I9IiNCODg2MkYiLz48c3RvcCBvZmZzZXQ9Ii44MiIgc3RvcC1jb2xvcj0iI0ZGRTM5QSIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzhFNjQyMCIvPjwvbGluZWFyR3JhZGllbnQ+PHBhdHRlcm4gaWQ9Imd4IiB3aWR0aD0iMyIgaGVpZ2h0PSIzIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIiBwYXR0ZXJuVHJhbnNmb3JtPSJyb3RhdGUoMTApIj48cmVjdCB3aWR0aD0iMyIgaGVpZ2h0PSIuNiIgZmlsbD0iI0ZGRkFFMSIgb3BhY2l0eT0iLjM4Ii8+PHJlY3QgeT0iLjYiIHdpZHRoPSIzIiBoZWlnaHQ9Ii44IiBmaWxsPSIjNUEzQzBBIiBvcGFjaXR5PSIuMjIiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHg9IjIwIiB5PSIyMTQiIHdpZHRoPSIzIiBoZWlnaHQ9IjE0IiByeD0iMSIgZmlsbD0idXJsKCNnYikiLz48cmVjdCB4PSIyMCIgeT0iMjE0IiB3aWR0aD0iMyIgaGVpZ2h0PSIxNCIgcng9IjEiIGZpbGw9InVybCgjZ3gpIi8+CjxwYXRoIGQ9Ik0yNCAxMCBIMTc2IFExOTIgMTAgMTkyIDI2IFYyMjIgUTE5MiAyMzggMTc2IDIzOCBIMjQgUTggMjM4IDggMjIyIFYyNiBROCAxMCAyNCAxMCBaIiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmYiIHN0cm9rZS1vcGFjaXR5PSIuMTIiIHN0cm9rZS13aWR0aD0iNSIvPgo8cGF0aCBkPSJNMjQgMTAgSDE3NiBRMTkyIDEwIDE5MiAyNiBWMjIyIFExOTIgMjM4IDE3NiAyMzggSDI0IFE4IDIzOCA4IDIyMiBWMjYgUTggMTAgMjQgMTAgWiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utb3BhY2l0eT0iLjYiIHN0cm9rZS13aWR0aD0iMS40Ii8+PC9zdmc+) 0 0/100% 100% no-repeat!important}#pip:before{content:"LE PHONG VU";position:absolute;left:31px;top:213px;z-index:4;font-family:VWM,serif;font-weight:600;font-size:13px;letter-spacing:.24em;color:transparent;background:repeating-linear-gradient(100deg,rgba(255,255,255,0) 0 1.6px,rgba(255,250,225,.38) 1.6px 2.2px,rgba(90,60,10,.22) 2.2px 3px),linear-gradient(180deg,#FFF1C4 0%,#F2CC74 38%,#B8862F 62%,#FFE39A 82%,#8E6420 100%);-webkit-background-clip:text;background-clip:text;filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.75));white-space:nowrap}#pipImg{transform:translate(10px,26px)}
 .mix{row-gap:2px!important;column-gap:9px!important}.mix:not(.cardmix){width:600px!important}
 .mix .w{font-family:VSUB,sans-serif!important;font-weight:600!important;font-size:30px!important;line-height:1.24!important;letter-spacing:.005em;color:#F6F1E7!important;text-shadow:0 1px 2px rgba(0,0,0,.55),0 2px 10px rgba(0,0,0,.45),0 0 22px rgba(0,0,0,.25)!important}
 .mix .w.sm{font-size:24px!important;font-weight:500!important}
@@ -227,6 +226,7 @@ MOODS = {   # hợp âm (MIDI) · gốc bass · BPM · độ sáng · mô tả
     'phantich': dict(ch=[[57, 60, 64, 67], [53, 57, 60, 64], [48, 55, 60, 62], [50, 55, 59, 64]], root=[45, 41, 36, 43], bpm=104, gain=-10,
                  desc='phân tích hiện đại – giữ nhịp (Am7–Fmaj7–Cadd9–G6): groove đều, đổi lớp mỗi 8 ô nhịp để giữ chân người xem'),
     'toi':  dict(desc='điện ảnh tối, nhịp đều (mặc định cũ): rủi ro, cảnh báo, pháp lý'),
+    'hung_tin': dict(gain=-9, desc='hùng tráng + kịch tính (Rê thứ, 112 BPM): nền hùng tráng + ostinato/tích tắc của nhạc tin cùng giọng'),
 }
 # ---------- MỨC ÂM ANH VŨ ĐÃ DUYỆT (22/11/2026) — mặc định cho mọi video ----------
 NHAC_MACDINH = 'tin'   # nhạc nền mặc định: đưa tin – phân tích, kịch tính, tích tắc 70 %
@@ -346,6 +346,13 @@ def _music_pt(dur, impacts, path):   # nền PHÂN TÍCH: electric piano + pad n
     x *= (fi * fo)[:, None]; x = hpf(x.T, 30).T; x = x / (np.abs(x).max() + 1e-9) * 10 ** (-1 / 20)
     w = wave.open(path, 'wb'); w.setnchannels(2); w.setsampwidth(2); w.setframerate(sr); w.writeframes((x * 32767).astype('<i2').tobytes()); w.close()
 def _music(dur, impacts, mood, path):
+    if mood == 'hung_tin':   # anh 26/11: hùng tráng làm nền chính + lớp kịch tính (ostinato, tích tắc) của 'tin' thấp hơn 5 dB
+        p1, p2 = path + '.hung.wav', path + '.tin.wav'; _music(dur, impacts, 'hung', p1)
+        bk = dict(MOODS['tin']); MOODS['tin'].update(ch=[c[:3] for c in MOODS['hung']['ch']], root=MOODS['hung']['root'], bpm=MOODS['hung']['bpm'])   # cùng giọng + nhịp với 'hung' để không lệch
+        try: _music_tin(dur, impacts, p2)
+        finally: MOODS['tin'].clear(); MOODS['tin'].update(bk)
+        subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', p1, '-i', p2, '-filter_complex', '[1:a]volume=-5dB[b];[0:a][b]amix=inputs=2:normalize=0,alimiter=limit=0.9[o]', '-map', '[o]', path], check=True)
+        return
     if mood == 'tin': return _music_tin(dur, impacts, path)
     if mood == 'phantich': return _music_pt(dur, impacts, path)
     import numpy as np, wave
@@ -432,6 +439,9 @@ def _gate_wm():   # cổng không kiểm watermark trôi (lớp chìm) — trán
     if not os.path.exists(g): return
     x = open(g, encoding='utf-8').read(); old = "      if (o.own === '#pip') continue;\n"
     if old in x: open(g, 'w', encoding='utf-8').write(x.replace(old, "      if (o.own === '#pip' || o.tx === WM_TEXT) continue;\n".replace('WM_TEXT', json.dumps(WM['text'])), 1))
+    x = open(g, encoding='utf-8').read()   # khung người nói mới 200×250 tại x426 y650 (anh duyệt 26/11/2026) — cổng kiểm chữ đè theo khung mới
+    y = x.replace("const P = { l: 446, t: 700, r: 626, b: 895 };", "const P = { l: 426, t: 650, r: 626, b: 900 };").replace("r: [446, 700, 626, 895]", "r: [426, 650, 626, 900]")
+    if y != x: open(g, 'w', encoding='utf-8').write(y)
 
 def out(DA):
     DA = os.path.abspath(os.path.expanduser(DA))
@@ -667,7 +677,8 @@ def _pt(p):   # (lon,lat) | khoá điểm có sẵn ('buonmathuot'…) | tên x�
         if not js: sys.exit(f'✖ không tìm thấy địa điểm "{p}" — đưa (lon, lat)')
         c[key] = [float(js[0]['lon']), float(js[0]['lat'])]; _geo_save(c)
     return tuple(c[key])
-def _road(wps):   # tuyến theo đường thật qua các điểm
+def _road(wps):   # tuyến theo đường thật qua các điểm · {'line': [(lon, lat)…]} = vẽ đúng hình học cho sẵn (vd cao tốc lấy từ OSM)
+    if isinstance(wps, dict): return [list(p) for p in wps['line']]
     P = [_pt(w) for w in wps]; c = _geo_cache(); key = 'r:' + ';'.join(f'{x:.4f},{y:.4f}' for x, y in P)
     if key not in c:
         r = subprocess.run(['curl', '-s', '--max-time', '30', 'https://router.project-osrm.org/route/v1/driving/' + ';'.join(f'{x},{y}' for x, y in P) + '?overview=full&geometries=geojson'], capture_output=True, text=True).stdout
@@ -690,15 +701,14 @@ def _tam(rings):   # tâm THỊ GIÁC của vùng (điểm trong vùng xa mép n
     d = np.where(inside, d, -1) - np.where((px > 470) & (py > 540), 1e4, 0)   # né khung người nói
     k = int(d.argmax()); return float(px[k]), float(py[k]), float(max(d[k], 30))
 
-def map_ranh(i, a, b, names=(), t_draw=None, label='', sub='', km2=False, routes=(), pins=(), center=None, km=6, d3=False):
+def map_ranh(i, a, b, names=(), t_draw=None, label='', sub='', km2=False, routes=(), pins=(), center=None, km=6, d3=False, areas=(), border=()):
     """bản đồ vệ tinh: zoom từ xa vào · xã/phường (names) viền vàng tự vẽ + vệt trắng chạy · tuyến đường (routes) xanh sáng tự vẽ · ghim (pins)
     routes=[('QUỐC LỘ 14', ['buonmathuot', 'Ea Kao'], t)] · pins=[('SÂN BAY', 'sanbaybmt', t)] · center=(điểm) km= bán kính khi không có xã"""
     D = _dtinh(); names = [names] if isinstance(names, str) else list(names); ks = [_pick(D, s) for s in names]
     t_draw = max(a + 1.2, a + .35 if t_draw is None else t_draw); DR = 1.0
-    if d3 and ks and not routes and not pins and center is None: return _sat3d(i, a, b, D, ks, t_draw, label, sub)
-    if d3: print('  ⚠ bản đồ 3D chỉ cho xã/phường/tỉnh (không routes/pins/center) → dùng bản 2D')
     RT = [(lb, _road(w), (t if t is not None else t_draw + .3 + .4 * n)) for n, (lb, w, *t_) in enumerate(routes) for t in [t_[0] if t_ else None]]
     PN = [(lb, _pt(p), (t_[0] if t_ else t_draw + .5 + .3 * n)) for n, (lb, p, *t_) in enumerate(pins)]
+    if d3: return _sat3d(i, a, b, D, ks, t_draw, label, sub, RT, PN, center, km, [(lb, _pt(p)) for lb, p in areas], [_pick(D, x) for x in ([border] if isinstance(border, str) else border)])
     pts = [p for k in ks for r in D[k]['r'] for p in r] + [p for _, ln, _ in RT for p in ln] + [p for _, p, _ in PN]
     if center is not None or not pts:
         cx_, cy_ = _pt(center) if center is not None else (pts[0] if pts else (108.038, 12.667)); dl = km / 111
@@ -757,10 +767,10 @@ def map_ranh(i, a, b, names=(), t_draw=None, label='', sub='', km2=False, routes
         svg += '<rect class="vg" width="720" height="1280" fill="#000" opacity="0"/>'
     for n, (lb, ln, t) in enumerate(RT):   # tuyến đường xanh sáng (như QUỐC LỘ 14 trong mẫu)
         L2 = plen(ln, False); d = path([ln], False); mid = S(*ln[len(ln) // 2])
-        svg += (f'<path class="rg{n}" d="{d}" fill="none" stroke="#3DF2A6" stroke-width="13" stroke-linecap="round" stroke-linejoin="round" filter="url(#{i}g)" opacity=".8" stroke-dasharray="{L2:.0f} {L2:.0f}" stroke-dashoffset="{L2:.0f}"/>'
-                f'<path class="rl{n}" d="{d}" fill="none" stroke="#9BFFD6" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="{L2:.0f} {L2:.0f}" stroke-dashoffset="{L2:.0f}"/>')
+        svg += (f'<path class="rg{n}" d="{d}" fill="none" stroke="#FF1A1A" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" filter="url(#{i}g)" opacity=".8" stroke-dasharray="{L2:.0f} {L2:.0f}" stroke-dashoffset="{L2:.0f}"/>'
+                f'<path class="rl{n}" d="{d}" fill="none" stroke="#FF6A5A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="{L2:.0f} {L2:.0f}" stroke-dashoffset="{L2:.0f}"/>')
         js += [f"tl.to('#{i} .rg{n},#{i} .rl{n}',{{strokeDashoffset:0,duration:1.1,ease:'power1.inOut'}},{t:.2f});"]
-        if lb: svg += chip(mid[0], mid[1] - 30, lb, '#9BFFD6', f'rc{n}', t + .6)
+        if lb: svg += chip(mid[0], mid[1] - 30, lb, '#FF7A6B', f'rc{n}', t + .6)
     for n, (lb, p, t) in enumerate(PN):
         x, y = S(*p)
         svg += (f'<g class="pn{n}"><circle cx="{x:.0f}" cy="{y:.0f}" r="9" fill="#F2CC74" stroke="#fff" stroke-width="3"/>'
@@ -780,8 +790,10 @@ def map_ranh(i, a, b, names=(), t_draw=None, label='', sub='', km2=False, routes
     js.append(f"tl.set('#{i}',{{autoAlpha:0}},{b});")
     if DA_:
         import cine
-        if ks: os.makedirs(os.path.join(DA_, 'sfx'), exist_ok=True); _sfx_ranh(os.path.join(DA_, 'sfx', 'ranh.wav'), DR); cine.sfx(t_draw - .05, 'ranh')
-    return html, js, [(a, 'whoosh')] + [(t, 'whoosh') for _, _, t in RT] + [(t, 'pop') for _, _, t in PN]
+        if ks or RT: os.makedirs(os.path.join(DA_, 'sfx'), exist_ok=True); _sfx_ranh(os.path.join(DA_, 'sfx', 'ranh.wav'), DR)
+        if ks: cine.sfx(t_draw - .05, 'ranh')
+        for _, _, t in RT: cine.sfx(t - .05, 'ranh')   # tuyến đường: cùng âm vẽ viền (anh yêu cầu 26/11/2026)
+    return html, js, [(a, 'whoosh')] + [(t, 'pop') for _, _, t in PN]
 
 # ---------- BẢN ĐỒ VỆ TINH 3D (P.sat(..., d3=True)) — anh duyệt mẫu Liên Sơn Lắk 26/11/2026 ----------
 # Ảnh Google + độ cao AWS Terrain (phóng ×1.8) dựng bằng three.js → chuỗi khung DA/s3d/<mã>/NNNN.jpg (đệm theo mã, build lại không dựng lại)
@@ -790,8 +802,8 @@ S3D_HTML = r"""<!doctype html><html><head><meta charset="utf-8"><style>
 @font-face{font-family:LPV;src:url(LPV.ttf)}html,body{margin:0;width:720px;height:1280px;overflow:hidden;background:#0b1016}canvas{position:absolute;left:0;top:0}
 #vig{position:absolute;inset:0;background:radial-gradient(120% 80% at 50% 45%,rgba(0,0,0,0) 45%,rgba(0,0,0,.55) 100%),linear-gradient(180deg,rgba(0,0,0,.5) 0%,rgba(0,0,0,0) 18%,rgba(0,0,0,0) 70%,rgba(0,0,0,.6) 100%)}
 #lab{position:absolute;left:0;top:0;text-align:center;opacity:0;white-space:nowrap}
-#lab .n{font-family:LPV,serif;color:#FFD23F;letter-spacing:1px;text-shadow:0 2px 0 #6b4a00,0 6px 18px rgba(0,0,0,.85)}
-#lab .k,#lab .s{font-family:LPV,serif;font-size:18px;letter-spacing:4px;color:rgba(255,255,255,.9);text-shadow:0 2px 8px #000}#lab .s{font-size:24px;letter-spacing:1px;margin-top:4px}
+#lab .n,#lab .k,#lab .s,.foil{font-family:LPV,serif;font-style:italic;letter-spacing:1px;background:linear-gradient(100deg,#7a5a24 0%,#c9a25a 14%,#f6e2a2 24%,#fff6d6 28%,#d9b468 38%,#8c6a2c 52%,#e8c983 64%,#fff1c2 70%,#b88f45 82%,#6e5020 100%);background-size:240% 100%;background-position:100% 0;-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;padding:.22em .06em .26em;margin:-.22em -.06em -.26em;filter:drop-shadow(0 1.5px 0 rgba(70,48,12,.95)) drop-shadow(0 8px 18px rgba(0,0,0,.7))}
+#lab .k{letter-spacing:4px}#lab .k:empty,#lab .s:empty{display:none}
 </style></head><body><div id="vig"></div><div id="lab"><div class="k" id="kk"></div><div class="n" id="nm"></div><div class="s" id="ss"></div></div>
 <script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/"}}</script>
 <script type="module">
@@ -828,20 +840,58 @@ void main(){vec3 c=texture2D(tex,vUv).rgb;c*=mix(1.,.3,dim);c=mix(c,vec3(dot(c,v
 }`});const mw=new THREE.Mesh(plane(S2,D.G2,(u,v)=>h2(u,v),-S*.0037),matw);mw.renderOrder=1;sc.add(mw);
 const lines=[];let NS=0;for(const R of D.rings){const pts=[];for(let n=0;n<=R.length;n++){const[a,b]=R[n%R.length];pts.push((a-.5)*S,hAt(a,b)+S*.0013,(b-.5)*S)}
  const mk=(w,col,op)=>{const lg=new LineGeometry();lg.setPositions(pts);const lm=new LineMaterial({color:col,linewidth:w,transparent:true,opacity:op,depthTest:false});lm.resolution.set(W,H);const l=new Line2(lg,lm);l.renderOrder=5;sc.add(l);return l};
- const n=pts.length/3-1;lines.push({pts,n,glow:mk(16,0xffb800,.28),core:mk(4.5,0xffd23f,1),hot:mk(9,0xffffff,.9)});NS+=n}
+ const n=pts.length/3-1;const core=mk(5,0xffffff,1);{const cols=[];let acc=0;for(let k=0;k<pts.length/3;k++){if(k)acc+=Math.hypot(pts[3*k]-pts[3*k-3],pts[3*k+2]-pts[3*k-1]);const f=.5+.5*Math.sin(acc/(S*.025));const c0=[.50,.35,.13],c1=[1,.93,.70];cols.push(c0[0]+(c1[0]-c0[0])*f,c0[1]+(c1[1]-c0[1])*f,c0[2]+(c1[2]-c0[2])*f)}core.geometry.setColors(cols);core.material.vertexColors=true;core.material.needsUpdate=true}
+ lines.push({pts,n,glow:mk(16,0xC9A25A,.35),core,hot:mk(8,0xFFF1C2,.85)});NS+=n}
+const RTS=[];for(const Q of (D.routes||[])){const pts=[];for(const[a,b]of Q.pts)pts.push((a-.5)*S,hAt(a,b)+S*.0018,(b-.5)*S);
+ const mk=(w,col,op)=>{const lg=new LineGeometry();lg.setPositions(pts);const lm=new LineMaterial({color:col,linewidth:w,transparent:true,opacity:op,depthTest:false});lm.resolution.set(W,H);const l=new Line2(lg,lm);l.renderOrder=6;sc.add(l);return l};
+ const n=pts.length/3-1,NR=(D.routes||[]).length,fr=NR>1?.58-.16*RTS.length/(NR-1):.5,m=Q.pts[Math.min(Q.pts.length-1,Math.floor(Q.pts.length*fr))];RTS.push({n,td:Q.td,glow:mk(18,0xFF1A1A,.6),core:mk(5.5,0xFF5A4A,1),hot:mk(1.6,0xFFE0D8,.95),mid:new THREE.Vector3((m[0]-.5)*S,hAt(m[0],m[1]),(m[1]-.5)*S),el:Q.lab?chip(Q.lab,'#FF7A6B'):null})}
+for(const B of (D.borders||[])){const pts=[];for(const[u,v]of B)pts.push((u-.5)*S,hAt(u,v)+S*.0012,(v-.5)*S);const lg=new LineGeometry();lg.setPositions(pts);
+ const lm=new LineMaterial({color:0xffffff,linewidth:2.2,transparent:true,opacity:.75,depthTest:false,dashed:true,dashSize:S*.006,gapSize:S*.004});lm.resolution.set(W,H);const l=new Line2(lg,lm);l.computeLineDistances();l.renderOrder=4;sc.add(l)}
+const ARS=[];for(const Q of (D.areas||[])){const[u,v]=Q.p;const e=document.createElement('div');e.className='foil';e.style.cssText='position:absolute;left:0;top:0;opacity:0;white-space:nowrap;font-size:30px;letter-spacing:2px';
+ e.textContent=Q.lab;document.body.appendChild(e);ARS.push({el:e,v:new THREE.Vector3((u-.5)*S,hAt(u,v),(v-.5)*S)})}
+const PNS=[];for(const Q of (D.pins||[])){const[a,b]=Q.p;PNS.push({td:Q.td,v:new THREE.Vector3((a-.5)*S,hAt(a,b),(b-.5)*S),el:chip(Q.lab||'','#F2CC74',true)})}
+function chip(t,col,dot){const e=document.createElement('div');e.style.cssText='position:absolute;left:0;top:0;opacity:0;white-space:nowrap;text-align:center';
+ e.innerHTML=dot?`<div style="display:flex;align-items:center;gap:8px"><div style="flex:none;width:18px;height:18px;border-radius:50%;background:#F2CC74;border:3px solid #fff;box-shadow:0 0 14px #F2CC74"></div>${t?`<div style="padding:6px 14px;border-radius:8px;background:rgba(8,20,14,.72);border:2px solid ${col};color:${col};font:800 19px LPV,sans-serif;letter-spacing:.5px">${t}</div>`:''}</div>`:(t?`<div style="display:inline-block;padding:6px 14px;border-radius:8px;background:rgba(8,20,14,.72);border:2px solid ${col};color:${col};font:800 19px LPV,sans-serif;letter-spacing:.5px">${t}</div>`:'');document.body.appendChild(e);return e}
+function place(e,v,op,dot){const p=v.clone().project(cam);const x=Math.min(600,Math.max(110,(p.x+1)/2*W)),y=Math.min(640,Math.max(220,(1-p.y)/2*H));e.style.opacity=op;e.style.transform=dot?`translate(${x}px,${y}px) translate(-12px,-50%)`:`translate(${x}px,${y}px) translate(-50%,-130%)`}
 const ctr=new THREE.Vector3((D.ctr[0]-.5)*S,hAt(D.ctr[0],D.ctr[1]),(D.ctr[1]-.5)*S);const lab=document.getElementById('lab');
 const E=x=>x<0?0:x>1?1:x*x*(3-2*x),io=x=>x<0?0:x>1?1:1-Math.pow(1-x,3);const TD=D.td,TZ=Math.max(1.,Math.min(2.2,TD+.4));
-window.renderAt=t=>{const a=io(t/TZ);const dist=S*(1.75-.45*a);const pitch=(89-35*a)*Math.PI/180;const yaw=D.yaw+t*3.5*Math.PI/180;
- sc.fog.near=dist*1.15;sc.fog.far=dist*2.8;cam.far=dist*4;cam.updateProjectionMatrix();
- cam.position.set(ctr.x+dist*Math.cos(pitch)*Math.sin(yaw),ctr.y+dist*Math.sin(pitch),ctr.z+dist*Math.cos(pitch)*Math.cos(yaw));cam.lookAt(ctr);
- U.dim.value=UW.dim.value=E((t-TD+.1)/.9);const d=io((t-TD)/1.0);
+// anh 26/11: bản đồ hiện HẾT vùng/tuyến trong khung đồ hoạ (x 60–600, y 200–620), né khung tivi góc phải dưới
+const FP=[];for(const o of lines)for(let k=0;k<o.pts.length;k+=3)FP.push(new THREE.Vector3(o.pts[k],o.pts[k+1],o.pts[k+2]));
+for(const Q of (D.routes||[]))for(const[u,v]of Q.pts)FP.push(new THREE.Vector3((u-.5)*S,hAt(u,v),(v-.5)*S));for(const o of PNS)FP.push(o.v);
+let FM=1,OX=0,OY=0;const DUR=D.dur||6;
+function setCam(t,m,ox,oy){const a=io(t/TZ);const dist=S*m*(1.75-.45*a);const pitch=(89-43*a)*Math.PI/180;const yaw=D.yaw+(t-DUR/2)*1.2*Math.PI/180;
+ sc.fog.near=dist*1.15;sc.fog.far=dist*2.8;cam.far=dist*4;cam.clearViewOffset();if(ox||oy)cam.setViewOffset(W,H,ox*a,oy*a,W,H);cam.updateProjectionMatrix();
+ cam.position.set(ctr.x+dist*Math.cos(pitch)*Math.sin(yaw),ctr.y+dist*Math.sin(pitch),ctr.z+dist*Math.cos(pitch)*Math.cos(yaw));cam.lookAt(ctr);cam.updateMatrixWorld();return a}
+function bb(t,m){setCam(t,m,0,0);let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;for(const v of FP){const p=v.clone().project(cam);const x=(p.x+1)/2*W,y=(1-p.y)/2*H;x0=Math.min(x0,x);x1=Math.max(x1,x);y0=Math.min(y0,y);y1=Math.max(y1,y)}return[x0,y0,x1,y1]}
+if(FP.length){const ts=[Math.max(TZ,DUR*.35),Math.max(TZ,DUR*.65),Math.max(TZ,DUR-.1)];const big=m=>{let w=0,h=0;for(const t of ts){const q=bb(t,m);w=Math.max(w,q[2]-q[0]);h=Math.max(h,q[3]-q[1])}return Math.max(w/570,h/470)};
+ for(let it=0;it<40;it++){const k=big(FM);if(Math.abs(k-1)<.015)break;FM*=Math.pow(k,.85)}
+ let cx=0,cy=0;for(const t of ts){const q=bb(t,FM);cx+=(q[0]+q[2])/6;cy+=(q[1]+q[3])/6}OX=cx-330;OY=cy-420}
+// anh 26/11: tên + chú thích nằm GỌN trong ranh giới, đặt ở tâm thị giác vùng, cỡ chữ tự vừa
+const KK=document.getElementById('kk'),SS=document.getElementById('ss');
+function setFS(f){nm.style.fontSize=f+'px';KK.style.fontSize=Math.max(11,f*.3)+'px';SS.style.fontSize=Math.max(12,f*.4)+'px'}
+function inPoly(x,y,P){let c=false;for(const R of P)for(let i=0,j=R.length-1;i<R.length;j=i++){const[xi,yi]=R[i],[xj,yj]=R[j];if((yi>y)!=(yj>y)&&x<(xj-xi)*(y-yi)/(yj-yi)+xi)c=!c}return c}
+function dEdge(x,y,P){let m=1e9;for(const R of P)for(let i=0,j=R.length-1;i<R.length;j=i++){const[ax,ay]=R[j],[bx,by]=R[i];const dx=bx-ax,dy=by-ay;const u=Math.max(0,Math.min(1,((x-ax)*dx+(y-ay)*dy)/(dx*dx+dy*dy||1)));m=Math.min(m,Math.hypot(x-ax-u*dx,y-ay-u*dy))}return m}
+let LP=null;await document.fonts.ready;
+if(D.rings.length){const tr=Math.min(DUR-.2,TD+1.4);setCam(tr,FM,OX,OY);
+ const P=lines.map(o=>{const q=[];for(let k=0;k<o.pts.length;k+=3){const p=new THREE.Vector3(o.pts[k],o.pts[k+1],o.pts[k+2]).project(cam);q.push([(p.x+1)/2*W,(1-p.y)/2*H])}return q});
+ const F=P.flat(),X0=Math.max(40,Math.min(...F.map(p=>p[0]))),X1=Math.min(620,Math.max(...F.map(p=>p[0]))),Y0=Math.max(170,Math.min(...F.map(p=>p[1]))),Y1=Math.min(640,Math.max(...F.map(p=>p[1])));
+ let best=null;
+ for(let fs=64;fs>=16&&!best;fs-=2){setFS(fs);const w=lab.offsetWidth+18,h=lab.offsetHeight+10;let bd=-1;
+  for(let y=Y0+h/2;y<=Y1-h/2;y+=5)for(let x=X0+w/2;x<=X1-w/2;x+=5){let ok=true;
+   for(let q=0;q<=10&&ok;q++){const f=q/10;for(const[px,py]of[[x-w/2+w*f,y-h/2],[x-w/2+w*f,y+h/2],[x-w/2,y-h/2+h*f],[x+w/2,y-h/2+h*f]])if(!inPoly(px,py,P)){ok=false;break}}
+   if(!ok)continue;const d=dEdge(x,y,P);if(d>bd){bd=d;best={x,y,fs}}}}
+ if(!best){setFS(16);let bd=-1;for(let y=Y0;y<=Y1;y+=5)for(let x=X0;x<=X1;x+=5)if(inPoly(x,y,P)){const d=dEdge(x,y,P);if(d>bd){bd=d;best={x,y,fs:16}}}}
+ if(best){setFS(best.fs);const rc=new THREE.Raycaster();rc.setFromCamera(new THREE.Vector2(best.x/W*2-1,1-best.y/H*2),cam);const hit=rc.intersectObject(md);LP=hit.length?hit[0].point:null}}
+window.renderAt=t=>{const a=setCam(t,FM,OX,OY);const dist=S*FM*(1.75-.45*a);
+ U.dim.value=UW.dim.value=D.rings.length?E((t-TD+.1)/.9):E((t-TD+.1)/.9)*.25;
+ for(const o of RTS){const d2=io((t-o.td)/1.1);const ns=Math.floor(d2*o.n);o.core.geometry.instanceCount=ns;o.glow.geometry.instanceCount=ns;o.hot.geometry.instanceCount=ns;o.glow.material.opacity=.5+.15*Math.sin(t*5)}const d=io((t-TD)/1.0);
  for(const o of lines){const ns=Math.floor(d*o.n);o.core.geometry.instanceCount=ns;o.glow.geometry.instanceCount=ns;let hs,he;
   if(d<1){he=ns;hs=Math.max(0,ns-6)}else{hs=Math.floor(((t-TD-1)/2.2%1)*o.n);he=hs+10}
   const seg=[];for(let k=Math.min(hs,o.n);k<=Math.min(he,o.n);k++)seg.push(o.pts[3*k],o.pts[3*k+1],o.pts[3*k+2]);
   if(seg.length>=6){o.hot.visible=true;o.hot.geometry.dispose();o.hot.geometry=new LineGeometry();o.hot.geometry.setPositions(seg)}else o.hot.visible=false;o.glow.material.opacity=.28+.12*Math.sin(t*5)}
- r.render(sc,cam);const sp=ctr.clone().add(new THREE.Vector3(0,S*.016,0)).project(cam);
- lab.style.left=Math.min(680,Math.max(40,(sp.x+1)/2*W))+'px';lab.style.top=Math.min(820,Math.max(260,(1-sp.y)/2*H))+'px';
- const la=E((t-TD-.8)/.5);lab.style.opacity=la;lab.style.transform=`translate(-50%,-50%) translateY(${(1-la)*20}px) scale(${.92+.08*la})`};
+ r.render(sc,cam);for(const o of RTS)if(o.el)place(o.el,o.mid,E((t-o.td-.6)/.3));for(const o of PNS)place(o.el,o.v,E((t-o.td)/.25),true);for(const o of ARS){const p=o.v.clone().project(cam);const x=Math.min(560,Math.max(160,(p.x+1)/2*W)),y=Math.min(620,Math.max(230,(1-p.y)/2*H));o.el.style.opacity=E((t-TD+.2)/.5)*.92;o.el.style.transform=`translate(${x}px,${y}px) translate(-50%,-50%)`}const sp=ctr.clone().add(new THREE.Vector3(0,S*.016,0)).project(cam);
+ if(LP){const q=LP.clone().project(cam);lab.style.left=((q.x+1)/2*W)+'px';lab.style.top=((1-q.y)/2*H)+'px'}else if(D.rings.length){lab.style.left=Math.min(560,Math.max(160,(sp.x+1)/2*W))+'px';lab.style.top=Math.min(560,Math.max(280,(1-sp.y)/2*H))+'px'}else{lab.style.left='360px';lab.style.top='168px'}
+ const la=E((t-TD-.8)/.5);lab.style.opacity=la;{const bp=(100-100*E((t-TD-.6)/1.8))+'% 0';for(const el of [nm,KK,SS])el.style.backgroundPosition=bp;for(const o of ARS)o.el.style.backgroundPosition=bp}lab.style.transform=`translate(-50%,-50%) translateY(${(1-la)*20}px) scale(${.92+.08*la})`};
 window.ready=true;
 </script></body></html>"""
 S3D_MJS = r"""import { createRequire } from 'module'; import fs from 'fs'; import path from 'path'; import os from 'os'; import http from 'http'; import { execSync } from 'child_process';
@@ -892,16 +942,19 @@ def _elev(z, x0, y0, x1, y1):   # độ cao AWS Terrain (terrarium) → mảng m
         try: a = np.asarray(Image.open(f).convert('RGB')).astype(float); A[(y - ty[0]) * 256:(y - ty[0] + 1) * 256, (x - tx[0]) * 256:(x - tx[0] + 1) * 256] = a[..., 0] * 256 + a[..., 1] + a[..., 2] / 256 - 32768
         except Exception: pass
     return A[int(y0 - ty[0] * 256):int(y1 - ty[0] * 256), int(x0 - tx[0] * 256):int(x1 - tx[0] * 256)]
-def _sat3d(i, a, b, D, ks, t_draw, label, sub):
+def _sat3d(i, a, b, D, ks, t_draw, label, sub, RT=(), PN=(), center=None, km=6, AR=(), BK=()):
     import numpy as np, hashlib; from PIL import Image, ImageDraw, ImageFilter
     Image.MAX_IMAGE_PIXELS = None
-    R = [r for k in ks for r in D[k]['r']]; P = [p for r in R for p in r]
+    R = [r for k in ks for r in D[k]['r']]; P = [p for r in R for p in r] + [p for _, ln, _ in RT for p in ln] + [p for _, p, _ in PN]
+    if center is not None or not P:
+        cx_, cy_ = _pt(center) if center is not None else (108.038, 12.667); dl = km / 111; P = P + [(cx_ - dl, cy_ - dl), (cx_ + dl, cy_ + dl)]
     xs = [p[0] for p in P]; ys = [p[1] for p in P]; lat = (min(ys) + max(ys)) / 2
     one = len(ks) == 1; full = D[ks[0]]['full'] if one else ''
     kick = '' if not one or ks[0] == '__tinh' else (full.split()[0].upper() if full and _plain(full) != _plain(D[ks[0]]['ten']) else '')
-    name = label or (('TỈNH ' if ks[0] == '__tinh' else '') + D[ks[0]]['ten'].upper() if one else ' · '.join(D[k]['ten'].upper() for k in ks))
+    if ks: name = label or (('TỈNH ' if ks[0] == '__tinh' else '') + D[ks[0]]['ten'].upper() if one else ' · '.join(D[k]['ten'].upper() for k in ks))
+    else: name, sub = (label or sub or ''), ''
     dur = b - a; td = t_draw - a; N = int(math.ceil(dur * 30)) + 1
-    key = hashlib.md5(json.dumps([ks, round(dur, 2), round(td, 2), name, kick, sub, 'v2']).encode()).hexdigest()[:10]
+    key = hashlib.md5(json.dumps([ks, round(dur, 2), round(td, 2), name, kick, sub, [(lb, ln, round(t - a, 2)) for lb, ln, t in RT], [(lb, p, round(t - a, 2)) for lb, p, t in PN], AR, BK, 'v9']).encode()).hexdigest()[:10]
     root = DA_ or HOME; jd = os.path.join(root, 's3d', key)
     if not os.path.exists(os.path.join(jd, 'done')):
         os.makedirs(jd, exist_ok=True); print(f'  · dựng bản đồ 3D {name} ({N} khung, ~{N * .45:.0f} s)…')
@@ -924,13 +977,26 @@ def _sat3d(i, a, b, D, ks, t_draw, label, sub):
         m = Image.new('L', (4096, 4096), 0); dr = ImageDraw.Draw(m)
         for r in R: dr.polygon([(u * 4096, v * 4096) for u, v in (tp(*p) for p in r)], fill=255)
         m.filter(ImageFilter.GaussianBlur(6)).save(os.path.join(jd, 'mask.png'))
-        rings = [[tp(*p) for p in r] for r in R if len(r) > 8]; uv = [q for r in rings for q in r]
+        rings = [[tp(*p) for p in r] for r in R if len(r) > 8]
+        rts = [{'pts': [tp(*p) for p in ln], 'td': t - a, 'lab': lb} for lb, ln, t in RT]
+        ars = [{'p': tp(*p), 'lab': lb} for lb, p in AR]
+        bds = []   # ranh giới tỉnh mảnh (bối cảnh), chỉ phần nằm trong mặt bản đồ
+        for k in BK:
+            for r in D[k]['r']:
+                cur = []
+                for q in [tp(*p) for p in r] + [tp(*r[0])]:
+                    if .01 < q[0] < .99 and .01 < q[1] < .99: cur.append(q)
+                    elif len(cur) > 1: bds.append(cur); cur = []
+                    else: cur = []
+                if len(cur) > 1: bds.append(cur)
+        pns = [{'p': tp(*p), 'td': t - a, 'lab': lb} for lb, p, t in PN]
+        uv = [q for r in rings for q in r] or ([q for r_ in rts for q in r_['pts']] + [q['p'] for q in pns]) or [tp(*p) for p in P]
         u0 = sum(q[0] for q in uv) / len(uv); v0 = sum(q[1] for q in uv) / len(uv)
         C = np.cov(np.array([[q[0] - u0, q[1] - v0] for q in uv]).T); w_, V_ = np.linalg.eigh(C); ax_ = V_[:, -1]
         yaw = math.atan2(ax_[0], ax_[1]); yaw = yaw if math.cos(yaw) >= 0 else yaw + math.pi   # nhìn dọc chiều dài vùng, camera phía nam
         emin = float(max(0, np.percentile(E1, 1)))
         json.dump({'G': 256, 'size': size, 'elev': E1.round(1).flatten().tolist(), 'G2': 256, 'size2': size * 4, 'elev2': E2.round(1).flatten().tolist(),
-                   'rings': rings, 'ctr': [u0, v0], 'name': name, 'kicker': kick, 'sub': sub or '', 'emin': emin, 'yaw': yaw, 'td': td}, open(os.path.join(jd, 'data.json'), 'w'))
+                   'rings': rings, 'routes': rts, 'pins': pns, 'areas': ars, 'borders': bds, 'dur': dur, 'ctr': [u0, v0], 'name': name, 'kicker': kick, 'sub': sub or '', 'emin': emin, 'yaw': yaw, 'td': td}, open(os.path.join(jd, 'data.json'), 'w'))
         open(os.path.join(jd, 'index.html'), 'w', encoding='utf-8').write(S3D_HTML); open(os.path.join(T_DIR, 's3d.mjs'), 'w').write(S3D_MJS)
         nm = os.path.join(jd, 'node_modules'); os.path.exists(nm) or os.symlink(_three(), nm)
         fp = os.path.join(T_DIR, 'LPVDisplay-Black.ttf')
@@ -942,13 +1008,15 @@ def _sat3d(i, a, b, D, ks, t_draw, label, sub):
     html = (f'<div class="vc" data-mg="ranh3d" id="{i}" style="left:0;top:0;width:720px;height:1280px;z-index:7;overflow:hidden;background:#0b1016">'
             f'<img class="s3" data-seq="{rel}/%04d.jpg" data-f="0" src="{rel}/0000.jpg" style="position:absolute;left:0;top:0;width:720px;height:1280px"/>'
             f'<svg viewBox="0 0 720 1280" width="720" height="1280" style="position:absolute;left:0;top:0"><text x="40" y="985" font-family="VCB6,sans-serif" font-weight="600" font-size="14" fill="rgba(255,255,255,.55)">'
-            f'Ảnh vệ tinh: Google · Độ cao: AWS Terrain · Ranh giới 2025: Bộ NN&amp;MT</text></svg></div>')
+            f'Ảnh vệ tinh: Google · Độ cao: AWS Terrain' + (' · Ranh giới 2025: Bộ NN&amp;MT' if ks else '') + (' · Tuyến: OpenStreetMap' if RT else '') + '</text></svg></div>')
     js = [f"tl.set('#{i}',{{autoAlpha:0}},0);", f"tl.to('#{i}',{{autoAlpha:1,duration:.25}},{a});",
           f"(function(){{var o={{f:0}},el=document.querySelector('#{i} .s3');tl.fromTo(o,{{f:0}},{{f:{N - 1},duration:{(N - 1) / 30:.3f},ease:'none',onUpdate:function(){{el.dataset.f=Math.round(o.f)}}}},{a});}})();",
           f"tl.set('#{i}',{{autoAlpha:0}},{b});"]
     if DA_:
-        import cine; os.makedirs(os.path.join(DA_, 'sfx'), exist_ok=True); _sfx_ranh(os.path.join(DA_, 'sfx', 'ranh.wav'), 1.0); cine.sfx(t_draw - .05, 'ranh')
-    return html, js, [(a, 'whoosh')]
+        import cine; os.makedirs(os.path.join(DA_, 'sfx'), exist_ok=True); _sfx_ranh(os.path.join(DA_, 'sfx', 'ranh.wav'), 1.0)
+        if ks: cine.sfx(t_draw - .05, 'ranh')
+        for _, _, t in RT: cine.sfx(t - .05, 'ranh')
+    return html, js, [(a, 'whoosh')] + [(t, 'pop') for _, _, t in PN]
 
 # ---------- STORYBOARD trước khi dựng (anh yêu cầu 26/11/2026, giống realcut) ----------
 #   vc.py sb DA              → DA/storyboard.xlsx (mỗi cảnh 1 dòng + ảnh) + DA/storyboard.jpg (xem nhanh) — đọc scenes.py + subs.py, KHÔNG dựng
