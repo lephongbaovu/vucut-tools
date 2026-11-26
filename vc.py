@@ -226,7 +226,7 @@ MOODS = {   # hợp âm (MIDI) · gốc bass · BPM · độ sáng · mô tả
     'phantich': dict(ch=[[57, 60, 64, 67], [53, 57, 60, 64], [48, 55, 60, 62], [50, 55, 59, 64]], root=[45, 41, 36, 43], bpm=104, gain=-10,
                  desc='phân tích hiện đại – giữ nhịp (Am7–Fmaj7–Cadd9–G6): groove đều, đổi lớp mỗi 8 ô nhịp để giữ chân người xem'),
     'toi':  dict(desc='điện ảnh tối, nhịp đều (mặc định cũ): rủi ro, cảnh báo, pháp lý'),
-    'hung_tin': dict(gain=-9, desc='hùng tráng + kịch tính (Rê thứ, 112 BPM): nền hùng tráng + ostinato/tích tắc của nhạc tin cùng giọng'),
+    'hung_tin': dict(gain=-14, desc='hùng tráng + kịch tính (Rê thứ, 112 BPM): nền hùng tráng + ostinato/tích tắc của nhạc tin cùng giọng'),
 }
 # ---------- MỨC ÂM ANH VŨ ĐÃ DUYỆT (22/11/2026) — mặc định cho mọi video ----------
 NHAC_MACDINH = 'tin'   # nhạc nền mặc định: đưa tin – phân tích, kịch tính, tích tắc 70 %
