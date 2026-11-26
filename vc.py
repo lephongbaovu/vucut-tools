@@ -104,7 +104,7 @@ def _fix(DA, rules):
 
 # ---------- lệnh ----------
 def setup(vc):
-    os.makedirs(T_DIR, exist_ok=True); open(VCP, 'w').write(os.path.abspath(vc))
+    os.makedirs(T_DIR, exist_ok=True); vc = _skill_copy(os.path.abspath(vc)); open(VCP, 'w').write(vc)   # bản chép đã vá preview.mjs (bản đồ 3D)
     sh(f'cp {vc}/tools/* {T_DIR}/')
     font_css()
     sh(f'python3 -c "import faster_whisper,rembg" 2>/dev/null && node {vc}/scripts/preview.mjs --check | grep -q ok && echo "✅ sẵn sàng" || python3 -X utf8 {vc}/scripts/vucut.py setup --rembg', keep='✅|✖|lỗi|SẴN')
@@ -690,11 +690,13 @@ def _tam(rings):   # tâm THỊ GIÁC của vùng (điểm trong vùng xa mép n
     d = np.where(inside, d, -1) - np.where((px > 470) & (py > 540), 1e4, 0)   # né khung người nói
     k = int(d.argmax()); return float(px[k]), float(py[k]), float(max(d[k], 30))
 
-def map_ranh(i, a, b, names=(), t_draw=None, label='', sub='', km2=False, routes=(), pins=(), center=None, km=6):
+def map_ranh(i, a, b, names=(), t_draw=None, label='', sub='', km2=False, routes=(), pins=(), center=None, km=6, d3=False):
     """bản đồ vệ tinh: zoom từ xa vào · xã/phường (names) viền vàng tự vẽ + vệt trắng chạy · tuyến đường (routes) xanh sáng tự vẽ · ghim (pins)
     routes=[('QUỐC LỘ 14', ['buonmathuot', 'Ea Kao'], t)] · pins=[('SÂN BAY', 'sanbaybmt', t)] · center=(điểm) km= bán kính khi không có xã"""
     D = _dtinh(); names = [names] if isinstance(names, str) else list(names); ks = [_pick(D, s) for s in names]
     t_draw = max(a + 1.2, a + .35 if t_draw is None else t_draw); DR = 1.0
+    if d3 and ks and not routes and not pins and center is None: return _sat3d(i, a, b, D, ks, t_draw, label, sub)
+    if d3: print('  ⚠ bản đồ 3D chỉ cho xã/phường/tỉnh (không routes/pins/center) → dùng bản 2D')
     RT = [(lb, _road(w), (t if t is not None else t_draw + .3 + .4 * n)) for n, (lb, w, *t_) in enumerate(routes) for t in [t_[0] if t_ else None]]
     PN = [(lb, _pt(p), (t_[0] if t_ else t_draw + .5 + .3 * n)) for n, (lb, p, *t_) in enumerate(pins)]
     pts = [p for k in ks for r in D[k]['r'] for p in r] + [p for _, ln, _ in RT for p in ln] + [p for _, p, _ in PN]
@@ -780,6 +782,173 @@ def map_ranh(i, a, b, names=(), t_draw=None, label='', sub='', km2=False, routes
         import cine
         if ks: os.makedirs(os.path.join(DA_, 'sfx'), exist_ok=True); _sfx_ranh(os.path.join(DA_, 'sfx', 'ranh.wav'), DR); cine.sfx(t_draw - .05, 'ranh')
     return html, js, [(a, 'whoosh')] + [(t, 'whoosh') for _, _, t in RT] + [(t, 'pop') for _, _, t in PN]
+
+# ---------- BẢN ĐỒ VỆ TINH 3D (P.sat(..., d3=True)) — anh duyệt mẫu Liên Sơn Lắk 26/11/2026 ----------
+# Ảnh Google + độ cao AWS Terrain (phóng ×1.8) dựng bằng three.js → chuỗi khung DA/s3d/<mã>/NNNN.jpg (đệm theo mã, build lại không dựng lại)
+# → trình dựng (preview.mjs đã vá ở setup) lắp khung theo giây qua <img data-seq>. Chỉ xã/phường; có routes/pins → tự về 2D.
+S3D_HTML = r"""<!doctype html><html><head><meta charset="utf-8"><style>
+@font-face{font-family:LPV;src:url(LPV.ttf)}html,body{margin:0;width:720px;height:1280px;overflow:hidden;background:#0b1016}canvas{position:absolute;left:0;top:0}
+#vig{position:absolute;inset:0;background:radial-gradient(120% 80% at 50% 45%,rgba(0,0,0,0) 45%,rgba(0,0,0,.55) 100%),linear-gradient(180deg,rgba(0,0,0,.5) 0%,rgba(0,0,0,0) 18%,rgba(0,0,0,0) 70%,rgba(0,0,0,.6) 100%)}
+#lab{position:absolute;left:0;top:0;text-align:center;opacity:0;white-space:nowrap}
+#lab .n{font-family:LPV,serif;color:#FFD23F;letter-spacing:1px;text-shadow:0 2px 0 #6b4a00,0 6px 18px rgba(0,0,0,.85)}
+#lab .k,#lab .s{font-family:LPV,serif;font-size:18px;letter-spacing:4px;color:rgba(255,255,255,.9);text-shadow:0 2px 8px #000}#lab .s{font-size:24px;letter-spacing:1px;margin-top:4px}
+</style></head><body><div id="vig"></div><div id="lab"><div class="k" id="kk"></div><div class="n" id="nm"></div><div class="s" id="ss"></div></div>
+<script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';import {Line2} from 'three/addons/lines/Line2.js';import {LineGeometry} from 'three/addons/lines/LineGeometry.js';import {LineMaterial} from 'three/addons/lines/LineMaterial.js';
+const D=await (await fetch('data.json')).json();const nm=document.getElementById('nm');nm.textContent=D.name;nm.style.fontSize=Math.min(58,600/(D.name.length*.62))+'px';
+document.getElementById('kk').textContent=D.kicker;document.getElementById('ss').textContent=D.sub;
+const W=720,H=1280,S=D.size/1000,G=D.G,EX=1.8,emin=D.emin;
+const r=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});r.setSize(W,H);r.setPixelRatio(1);document.body.prepend(r.domElement);r.outputColorSpace=THREE.SRGBColorSpace;
+const sc=new THREE.Scene();sc.background=new THREE.Color(0x0b1016);sc.fog=new THREE.Fog(0x0b1016,60,140);const cam=new THREE.PerspectiveCamera(38,W/H,S*.001,S*10);
+function mkH(E,G){return (u,v)=>{const x=Math.min(G-1.001,Math.max(0,u*(G-1))),y=Math.min(G-1.001,Math.max(0,v*(G-1)));const i=Math.floor(x),j=Math.floor(y),fx=x-i,fy=y-j,e=(a,b)=>Math.max(emin,E[b*G+a]);
+ return ((e(i,j)*(1-fx)+e(i+1,j)*fx)*(1-fy)+(e(i,j+1)*(1-fx)+e(i+1,j+1)*fx)*fy-emin)/1000*EX}}
+const hAt=mkH(D.elev,G),h2=mkH(D.elev2,D.G2);
+function plane(Sz,Gn,hf,dz){const g=new THREE.PlaneGeometry(Sz,Sz,Gn-1,Gn-1);g.rotateX(-Math.PI/2);const p=g.attributes.position;for(let k=0;k<p.count;k++){p.setY(k,hf(p.getX(k)/Sz+.5,p.getZ(k)/Sz+.5)+dz)}return g}
+const L=new THREE.TextureLoader();const ld=async f=>{const t=await L.loadAsync(f);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=8;return t};
+const VS=`varying vec2 vUv;
+#include <fog_pars_vertex>
+void main(){vUv=uv;vec4 mvPosition=modelViewMatrix*vec4(position,1.);gl_Position=projectionMatrix*mvPosition;
+#include <fog_vertex>
+}`;
+const U={tex:{value:await ld('sat.jpg')},mask:{value:await L.loadAsync('mask.png')},dim:{value:0},fogColor:{value:sc.fog.color},fogNear:{value:1},fogFar:{value:2}};
+const mat=new THREE.ShaderMaterial({uniforms:U,fog:true,transparent:true,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4,vertexShader:VS,fragmentShader:`uniform sampler2D tex,mask;uniform float dim;varying vec2 vUv;
+#include <fog_pars_fragment>
+void main(){vec3 c=texture2D(tex,vUv).rgb;float m=texture2D(mask,vUv).r;c*=mix(1.,mix(.3,1.15,m),dim);c=mix(vec3(dot(c,vec3(.3,.59,.11))),c,1.+.25*m*dim);
+c=mix(c,vec3(dot(c,vec3(.3,.59,.11))),dim*(1.-m)*.6);vec2 e=min(vUv,1.-vUv);gl_FragColor=vec4(c,smoothstep(0.,.12,min(e.x,e.y)));
+#include <colorspace_fragment>
+#include <fog_fragment>
+}`});const md=new THREE.Mesh(plane(S,G,hAt,0),mat);md.renderOrder=2;sc.add(md);
+const S2=D.size2/1000;const UW={tex:{value:await ld('satw.jpg')},dim:{value:0},fogColor:{value:sc.fog.color},fogNear:{value:1},fogFar:{value:2}};
+const matw=new THREE.ShaderMaterial({uniforms:UW,fog:true,vertexShader:VS,fragmentShader:`uniform sampler2D tex;uniform float dim;varying vec2 vUv;
+#include <fog_pars_fragment>
+void main(){vec3 c=texture2D(tex,vUv).rgb;c*=mix(1.,.3,dim);c=mix(c,vec3(dot(c,vec3(.3,.59,.11))),dim*.6);gl_FragColor=vec4(c,1.);
+#include <colorspace_fragment>
+#include <fog_fragment>
+}`});const mw=new THREE.Mesh(plane(S2,D.G2,(u,v)=>h2(u,v),-S*.0037),matw);mw.renderOrder=1;sc.add(mw);
+const lines=[];let NS=0;for(const R of D.rings){const pts=[];for(let n=0;n<=R.length;n++){const[a,b]=R[n%R.length];pts.push((a-.5)*S,hAt(a,b)+S*.0013,(b-.5)*S)}
+ const mk=(w,col,op)=>{const lg=new LineGeometry();lg.setPositions(pts);const lm=new LineMaterial({color:col,linewidth:w,transparent:true,opacity:op,depthTest:false});lm.resolution.set(W,H);const l=new Line2(lg,lm);l.renderOrder=5;sc.add(l);return l};
+ const n=pts.length/3-1;lines.push({pts,n,glow:mk(16,0xffb800,.28),core:mk(4.5,0xffd23f,1),hot:mk(9,0xffffff,.9)});NS+=n}
+const ctr=new THREE.Vector3((D.ctr[0]-.5)*S,hAt(D.ctr[0],D.ctr[1]),(D.ctr[1]-.5)*S);const lab=document.getElementById('lab');
+const E=x=>x<0?0:x>1?1:x*x*(3-2*x),io=x=>x<0?0:x>1?1:1-Math.pow(1-x,3);const TD=D.td,TZ=Math.max(1.,Math.min(2.2,TD+.4));
+window.renderAt=t=>{const a=io(t/TZ);const dist=S*(1.75-.45*a);const pitch=(89-35*a)*Math.PI/180;const yaw=D.yaw+t*3.5*Math.PI/180;
+ sc.fog.near=dist*1.15;sc.fog.far=dist*2.8;cam.far=dist*4;cam.updateProjectionMatrix();
+ cam.position.set(ctr.x+dist*Math.cos(pitch)*Math.sin(yaw),ctr.y+dist*Math.sin(pitch),ctr.z+dist*Math.cos(pitch)*Math.cos(yaw));cam.lookAt(ctr);
+ U.dim.value=UW.dim.value=E((t-TD+.1)/.9);const d=io((t-TD)/1.0);
+ for(const o of lines){const ns=Math.floor(d*o.n);o.core.geometry.instanceCount=ns;o.glow.geometry.instanceCount=ns;let hs,he;
+  if(d<1){he=ns;hs=Math.max(0,ns-6)}else{hs=Math.floor(((t-TD-1)/2.2%1)*o.n);he=hs+10}
+  const seg=[];for(let k=Math.min(hs,o.n);k<=Math.min(he,o.n);k++)seg.push(o.pts[3*k],o.pts[3*k+1],o.pts[3*k+2]);
+  if(seg.length>=6){o.hot.visible=true;o.hot.geometry.dispose();o.hot.geometry=new LineGeometry();o.hot.geometry.setPositions(seg)}else o.hot.visible=false;o.glow.material.opacity=.28+.12*Math.sin(t*5)}
+ r.render(sc,cam);const sp=ctr.clone().add(new THREE.Vector3(0,S*.016,0)).project(cam);
+ lab.style.left=Math.min(680,Math.max(40,(sp.x+1)/2*W))+'px';lab.style.top=Math.min(820,Math.max(260,(1-sp.y)/2*H))+'px';
+ const la=E((t-TD-.8)/.5);lab.style.opacity=la;lab.style.transform=`translate(-50%,-50%) translateY(${(1-la)*20}px) scale(${.92+.08*la})`};
+window.ready=true;
+</script></body></html>"""
+S3D_MJS = r"""import { createRequire } from 'module'; import fs from 'fs'; import path from 'path'; import os from 'os'; import http from 'http'; import { execSync } from 'child_process';
+function loadPlaywright() { const bases = [path.join(os.homedir(), '.vucut', 'node') + '/', import.meta.url, process.cwd() + '/'];
+  try { bases.push(path.dirname(execSync('npm root -g', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim()) + '/'); } catch {}
+  for (const b of bases) { try { return createRequire(b)('playwright'); } catch {} } console.error('✖ thiếu playwright'); process.exit(2); }
+const { chromium } = loadPlaywright(); const [dir, nS] = process.argv.slice(2); const N = +nS;
+const MT = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.jpg': 'image/jpeg', '.png': 'image/png', '.ttf': 'font/ttf' };
+const srv = http.createServer((q, s) => { const f = path.join(dir, decodeURIComponent(q.url.split('?')[0])); fs.readFile(f, (e, d) => { if (e) { s.writeHead(404); s.end(); } else { s.writeHead(200, { 'Content-Type': MT[path.extname(f)] || 'application/octet-stream' }); s.end(d); } }); });
+await new Promise(r => srv.listen(0, r)); const port = srv.address().port;
+const args = ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--use-gl=angle'];
+let b; try { b = await chromium.launch({ args }); } catch { b = await chromium.launch({ args, executablePath: '/usr/bin/google-chrome' }); }
+const pg = await b.newPage({ viewport: { width: 720, height: 1280 } }); pg.on('pageerror', e => console.error('✖ 3D:', String(e)));
+await pg.goto(`http://localhost:${port}/index.html`); await pg.waitForFunction('window.ready===true', null, { timeout: 180000 }); await pg.waitForTimeout(400);
+for (let k = 0; k < N; k++) { await pg.evaluate(t => renderAt(t), k / 30); await pg.screenshot({ path: path.join(dir, String(k).padStart(4, '0') + '.jpg'), type: 'jpeg', quality: 90 }); }
+await b.close(); srv.close(); fs.writeFileSync(path.join(dir, 'done'), String(N)); console.log('✓ 3D', N, 'khung');"""
+PREVIEW_PATCH = ("    window.__timelines.master.seek(t, false);\n  }, [frameFile",
+                 "    window.__timelines.master.seek(t, false);\n"
+                 "    for (const el of document.querySelectorAll('img[data-seq]')) {   // vucut-tools: chuỗi khung dựng sẵn (bản đồ 3D)\n"
+                 "      const src = el.dataset.seq.replace('%04d', String(+el.dataset.f || 0).padStart(4, '0'));\n"
+                 "      if (el.getAttribute('src') !== src) { el.setAttribute('src', src); await el.decode().catch(() => {}); } }\n"
+                 "  }, [frameFile")
+def _skill_copy(vc):   # chép skill sang ~/.vucut/skill + vá preview.mjs (lắp chuỗi khung 3D) — skill gốc chỉ đọc
+    dst = os.path.join(HOME, 'skill')
+    if os.path.abspath(vc) != dst: subprocess.run(['rm', '-rf', dst]); shutil.copytree(vc, dst)
+    pm = os.path.join(dst, 'scripts', 'preview.mjs'); s = open(pm, encoding='utf-8').read()
+    if PREVIEW_PATCH[0] in s: open(pm, 'w', encoding='utf-8').write(s.replace(PREVIEW_PATCH[0], PREVIEW_PATCH[1], 1))
+    else: print('  ⚠ không vá được preview.mjs — bản đồ 3D sẽ đứng hình'); 
+    return dst
+def _three():
+    d = os.path.join(HOME, 'three')
+    if not os.path.exists(os.path.join(d, 'node_modules', 'three', 'build', 'three.module.js')):
+        os.makedirs(d, exist_ok=True); subprocess.run('npm i -s three@0.160.0', shell=True, cwd=d, capture_output=True)
+    return os.path.join(d, 'node_modules')
+def _zfor(span14, target):   # zoom sao cho bề ngang vùng ≈ target px
+    return int(max(6, min(18, 14 + math.floor(math.log2(target / max(1, span14))))))
+def _elev(z, x0, y0, x1, y1):   # độ cao AWS Terrain (terrarium) → mảng mét
+    import numpy as np; from PIL import Image
+    cd = os.path.join(HOME, 'dem'); os.makedirs(cd, exist_ok=True); tx = range(int(x0 // 256), int(x1 // 256) + 1); ty = range(int(y0 // 256), int(y1 // 256) + 1)
+    from concurrent.futures import ThreadPoolExecutor
+    def get(xy):
+        f = os.path.join(cd, f'{z}_{xy[0]}_{xy[1]}.png')
+        if not os.path.exists(f) or os.path.getsize(f) < 100: subprocess.run(['curl', '-s', '--max-time', '20', '-o', f, f'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{xy[0]}/{xy[1]}.png'])
+        return xy, f
+    with ThreadPoolExecutor(12) as ex: fs = list(ex.map(get, [(x, y) for x in tx for y in ty]))
+    A = np.zeros((len(ty) * 256, len(tx) * 256))
+    for (x, y), f in fs:
+        try: a = np.asarray(Image.open(f).convert('RGB')).astype(float); A[(y - ty[0]) * 256:(y - ty[0] + 1) * 256, (x - tx[0]) * 256:(x - tx[0] + 1) * 256] = a[..., 0] * 256 + a[..., 1] + a[..., 2] / 256 - 32768
+        except Exception: pass
+    return A[int(y0 - ty[0] * 256):int(y1 - ty[0] * 256), int(x0 - tx[0] * 256):int(x1 - tx[0] * 256)]
+def _sat3d(i, a, b, D, ks, t_draw, label, sub):
+    import numpy as np, hashlib; from PIL import Image, ImageDraw, ImageFilter
+    Image.MAX_IMAGE_PIXELS = None
+    R = [r for k in ks for r in D[k]['r']]; P = [p for r in R for p in r]
+    xs = [p[0] for p in P]; ys = [p[1] for p in P]; lat = (min(ys) + max(ys)) / 2
+    one = len(ks) == 1; full = D[ks[0]]['full'] if one else ''
+    kick = '' if not one or ks[0] == '__tinh' else (full.split()[0].upper() if full and _plain(full) != _plain(D[ks[0]]['ten']) else '')
+    name = label or (('TỈNH ' if ks[0] == '__tinh' else '') + D[ks[0]]['ten'].upper() if one else ' · '.join(D[k]['ten'].upper() for k in ks))
+    dur = b - a; td = t_draw - a; N = int(math.ceil(dur * 30)) + 1
+    key = hashlib.md5(json.dumps([ks, round(dur, 2), round(td, 2), name, kick, sub, 'v2']).encode()).hexdigest()[:10]
+    root = DA_ or HOME; jd = os.path.join(root, 's3d', key)
+    if not os.path.exists(os.path.join(jd, 'done')):
+        os.makedirs(jd, exist_ok=True); print(f'  · dựng bản đồ 3D {name} ({N} khung, ~{N * .45:.0f} s)…')
+        ax, ay = _wm(min(xs), max(ys), 14); bx, by = _wm(max(xs), min(ys), 14); cx, cy = (ax + bx) / 2, (ay + by) / 2; half = max(bx - ax, by - ay) * 1.25
+        mpp = 156543.03 * math.cos(math.radians(lat)) / 2 ** 14; size = 2 * half * mpp
+        def layer(K, target, N_):
+            z = _zfor(2 * half * K, target); f = 2 ** (14 - z); h = half * K / f
+            im = _tiles(z, cx / f - h, cy / f - h, cx / f + h, cy / f + h).resize((N_, N_), Image.LANCZOS)
+            ze = min(13, _zfor(2 * half * K, 900)); fe = 2 ** (14 - ze); he = half * K / fe
+            E = _elev(ze, cx / fe - he, cy / fe - he, cx / fe + he, cy / fe + he)
+            return np.asarray(im).astype(float) / 255, np.clip(np.array(Image.fromarray(E.astype(np.float32)).resize((256, 256), Image.BILINEAR)), 0, None)   # biển phẳng
+        def shade(s, Eg, sz):
+            gy, gx = np.gradient(Eg, sz / 256); az, al = math.radians(315), math.radians(40); sl = np.arctan(np.hypot(gx, gy)); asp = np.arctan2(-gx, gy)
+            hs = np.clip(np.sin(al) * np.cos(sl) + np.cos(al) * np.sin(sl) * np.cos(az - asp), 0, 1)
+            h = np.asarray(Image.fromarray((hs * 255).astype(np.uint8)).resize(s.shape[:2][::-1], Image.BILINEAR)).astype(float)[..., None] / 255
+            return Image.fromarray((np.clip(((s * (.55 + .65 * h)) * 1.08 - .5) * 1.12 + .5, 0, 1) * 255).astype(np.uint8))
+        s1, E1 = layer(1, 5000, 4096); s2, E2 = layer(4, 4000, 4096)
+        shade(s1, E1, size).save(os.path.join(jd, 'sat.jpg'), quality=90); shade(s2, E2, size * 4).save(os.path.join(jd, 'satw.jpg'), quality=88)
+        def tp(lon, la): px, py = _wm(lon, la, 14); return ((px - cx + half) / (2 * half), (py - cy + half) / (2 * half))
+        m = Image.new('L', (4096, 4096), 0); dr = ImageDraw.Draw(m)
+        for r in R: dr.polygon([(u * 4096, v * 4096) for u, v in (tp(*p) for p in r)], fill=255)
+        m.filter(ImageFilter.GaussianBlur(6)).save(os.path.join(jd, 'mask.png'))
+        rings = [[tp(*p) for p in r] for r in R if len(r) > 8]; uv = [q for r in rings for q in r]
+        u0 = sum(q[0] for q in uv) / len(uv); v0 = sum(q[1] for q in uv) / len(uv)
+        C = np.cov(np.array([[q[0] - u0, q[1] - v0] for q in uv]).T); w_, V_ = np.linalg.eigh(C); ax_ = V_[:, -1]
+        yaw = math.atan2(ax_[0], ax_[1]); yaw = yaw if math.cos(yaw) >= 0 else yaw + math.pi   # nhìn dọc chiều dài vùng, camera phía nam
+        emin = float(max(0, np.percentile(E1, 1)))
+        json.dump({'G': 256, 'size': size, 'elev': E1.round(1).flatten().tolist(), 'G2': 256, 'size2': size * 4, 'elev2': E2.round(1).flatten().tolist(),
+                   'rings': rings, 'ctr': [u0, v0], 'name': name, 'kicker': kick, 'sub': sub or '', 'emin': emin, 'yaw': yaw, 'td': td}, open(os.path.join(jd, 'data.json'), 'w'))
+        open(os.path.join(jd, 'index.html'), 'w', encoding='utf-8').write(S3D_HTML); open(os.path.join(T_DIR, 's3d.mjs'), 'w').write(S3D_MJS)
+        nm = os.path.join(jd, 'node_modules'); os.path.exists(nm) or os.symlink(_three(), nm)
+        fp = os.path.join(T_DIR, 'LPVDisplay-Black.ttf')
+        if not os.path.exists(fp): lpv_css()
+        if os.path.exists(fp): shutil.copy(fp, os.path.join(jd, 'LPV.ttf'))
+        r_ = subprocess.run(['node', os.path.join(T_DIR, 's3d.mjs'), jd, str(N)], capture_output=True, text=True)
+        if not os.path.exists(os.path.join(jd, 'done')): sys.exit('✖ dựng bản đồ 3D lỗi: ' + (r_.stderr or r_.stdout)[-600:])
+    rel = os.path.relpath(jd, os.path.join(root, 'build')) if DA_ else jd
+    html = (f'<div class="vc" data-mg="ranh3d" id="{i}" style="left:0;top:0;width:720px;height:1280px;z-index:7;overflow:hidden;background:#0b1016">'
+            f'<img class="s3" data-seq="{rel}/%04d.jpg" data-f="0" src="{rel}/0000.jpg" style="position:absolute;left:0;top:0;width:720px;height:1280px"/>'
+            f'<svg viewBox="0 0 720 1280" width="720" height="1280" style="position:absolute;left:0;top:0"><text x="40" y="985" font-family="VCB6,sans-serif" font-weight="600" font-size="14" fill="rgba(255,255,255,.55)">'
+            f'Ảnh vệ tinh: Google · Độ cao: AWS Terrain · Ranh giới 2025: Bộ NN&amp;MT</text></svg></div>')
+    js = [f"tl.set('#{i}',{{autoAlpha:0}},0);", f"tl.to('#{i}',{{autoAlpha:1,duration:.25}},{a});",
+          f"(function(){{var o={{f:0}},el=document.querySelector('#{i} .s3');tl.fromTo(o,{{f:0}},{{f:{N - 1},duration:{(N - 1) / 30:.3f},ease:'none',onUpdate:function(){{el.dataset.f=Math.round(o.f)}}}},{a});}})();",
+          f"tl.set('#{i}',{{autoAlpha:0}},{b});"]
+    if DA_:
+        import cine; os.makedirs(os.path.join(DA_, 'sfx'), exist_ok=True); _sfx_ranh(os.path.join(DA_, 'sfx', 'ranh.wav'), 1.0); cine.sfx(t_draw - .05, 'ranh')
+    return html, js, [(a, 'whoosh')]
 
 # ---------- bộ phong cách (tự xoay theo video) + cảnh mẫu 1 dòng ----------
 PACKS = [
