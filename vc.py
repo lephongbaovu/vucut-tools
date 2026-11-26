@@ -599,14 +599,16 @@ def _pick(D, s):
     for k, v in D.items():
         if _plain(s) in (_plain(v['ten']), _plain(v['full']), k.replace('_', ' ')): return k
     sys.exit(f'✖ không có xã/phường "{s}" — tra: vc.py ranh {s}')
-def _tiles(z, x0, y0, x1, y1):   # ảnh vệ tinh Bing (cache ~/.vucut/tiles) → PIL mosaic từ pixel (x0,y0) tới (x1,y1) ở zoom z
+def _tiles(z, x0, y0, x1, y1):   # ảnh vệ tinh GOOGLE MAPS (anh chốt 26/11/2026; Bing chỉ dự phòng khi Google lỗi; cache ~/.vucut/tiles_g) → PIL mosaic từ pixel (x0,y0) tới (x1,y1) ở zoom z
     from PIL import Image; from concurrent.futures import ThreadPoolExecutor
-    cd = os.path.join(HOME, 'tiles'); os.makedirs(cd, exist_ok=True); tx = range(int(x0 // 256), int(x1 // 256) + 1); ty = range(int(y0 // 256), int(y1 // 256) + 1)
+    cd = os.path.join(HOME, 'tiles_g'); os.makedirs(cd, exist_ok=True); tx = range(int(x0 // 256), int(x1 // 256) + 1); ty = range(int(y0 // 256), int(y1 // 256) + 1)
     def qk(x, y): return ''.join(str((((x >> i) & 1) | (((y >> i) & 1) << 1))) for i in range(z - 1, -1, -1))
     def get(xy):
         x, y = xy; f = os.path.join(cd, f'{z}_{x}_{y}.jpg')
         if not os.path.exists(f) or os.path.getsize(f) < 1000:
-            subprocess.run(['curl', '-s', '--max-time', '20', '-o', f, f'https://ecn.t{(x + y) % 4}.tiles.virtualearth.net/tiles/a{qk(x, y)}.jpeg?g=1'])
+            subprocess.run(['curl', '-s', '--max-time', '20', '-A', 'Mozilla/5.0', '-o', f, f'https://mt{(x + y) % 4}.google.com/vt/lyrs=s&hl=vi&x={x}&y={y}&z={z}'])
+            if not os.path.exists(f) or os.path.getsize(f) < 1000:   # Google lỗi → Bing dự phòng
+                subprocess.run(['curl', '-s', '--max-time', '20', '-o', f, f'https://ecn.t{(x + y) % 4}.tiles.virtualearth.net/tiles/a{qk(x, y)}.jpeg?g=1'])
         return xy, f
     with ThreadPoolExecutor(12) as ex: fs = list(ex.map(get, [(x, y) for x in tx for y in ty]))
     for xy, f in fs:   # tải lại ô hỏng (mép đen)
@@ -771,7 +773,7 @@ def map_ranh(i, a, b, names=(), t_draw=None, label='', sub='', km2=False, routes
             f'<svg viewBox="0 0 720 1280" width="720" height="1280" style="position:absolute;left:0;top:0"><defs>'
             f'<filter id="{i}g" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="9"/></filter>'
             f'<filter id="{i}g2" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="2.5"/></filter></defs>'
-            f'{svg}{tt}<text class="cr" x="40" y="985" font-family="VCB6,sans-serif" font-weight="600" font-size="14" fill="rgba(255,255,255,.55)">Ảnh vệ tinh: Bing Maps · '
+            f'{svg}{tt}<text class="cr" x="40" y="985" font-family="VCB6,sans-serif" font-weight="600" font-size="14" fill="rgba(255,255,255,.55)">Ảnh vệ tinh: Google · '
             + ('Ranh giới 2025: Bộ NN&amp;MT' if ks else '') + (' · ' if ks and RT else '') + ('Tuyến: OpenStreetMap' if RT else '') + '</text></svg></div>')
     js.append(f"tl.set('#{i}',{{autoAlpha:0}},{b});")
     if DA_:
