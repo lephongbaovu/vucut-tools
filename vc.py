@@ -1,4 +1,4 @@
-"""vc.py · vucut gọn: setup | go VIDEO DA [thu] | cut DA ["sai=>đúng"…] [--keep a-b] [--drop a-b] | build DA | out DA | wait DA | grid DA [video.mp4] [giây…] | ranh [tên…] | speakers DA
+"""vc.py · vucut gọn: setup | go VIDEO DA [thu] | cut DA ["sai=>đúng"…] [--keep a-b] [--drop a-b] | sb DA [--read FILE] | build DA | out DA | wait DA | grid DA [video.mp4] [giây…] | ranh [tên…] | speakers DA
 Trong build.py (tự sinh): import vc as P → P.sub / P.skip / P.kinetic / P.hook / P.hide / P.speaker · cảnh mẫu P.mat / P.vanban / P.ds / P.so / P.hinh / P.sat"""
 import base64, glob, json, os, re, shutil, subprocess, sys, tarfile, tempfile, time
 HOME = os.path.expanduser('~/.vucut'); T_DIR = os.path.join(HOME, 'tools'); FONT = os.path.join(T_DIR, 'vsub_font.css')
@@ -950,6 +950,150 @@ def _sat3d(i, a, b, D, ks, t_draw, label, sub):
         import cine; os.makedirs(os.path.join(DA_, 'sfx'), exist_ok=True); _sfx_ranh(os.path.join(DA_, 'sfx', 'ranh.wav'), 1.0); cine.sfx(t_draw - .05, 'ranh')
     return html, js, [(a, 'whoosh')]
 
+# ---------- STORYBOARD trước khi dựng (anh yêu cầu 26/11/2026, giống realcut) ----------
+#   vc.py sb DA              → DA/storyboard.xlsx (mỗi cảnh 1 dòng + ảnh) + DA/storyboard.jpg (xem nhanh) — đọc scenes.py + subs.py, KHÔNG dựng
+#   vc.py sb DA --read FILE  → so bản anh sửa với bản gốc, in ô đã đổi + cột ANH SỬA → sửa scenes.py/subs.py rồi mới build
+SB_COLS = ['CẢNH', 'GIÂY', 'LỜI ANH NÓI', 'LOẠI CẢNH', 'NỘI DUNG HÌNH', 'CHỮ NHẤN (PHỤ ĐỀ)', 'HIỆU ỨNG / ÂM', 'ẢNH', 'ANH SỬA']
+SB_KIND = {'mat': 'MẶT', 'vanban': 'VĂN BẢN', 'ds': 'THÔNG TIN', 'so': 'CON SỐ', 'sat': 'BẢN ĐỒ', 'cta': 'KÊU GỌI', 'hinh': 'ĐỒ HOẠ', 'full': 'ĐỒ HOẠ', 'person': 'MẶT', 'tu': 'MẶT'}
+def _sb_txt(v):
+    if isinstance(v, str): return v
+    if isinstance(v, (int, float)): return f'{v:g}'
+    if isinstance(v, (list, tuple)): return ', '.join(_sb_txt(x) for x in v if not isinstance(x, (int, float)) or isinstance(x, bool)) or ''
+    return ''
+def _sb_desc(n, ar, kw):
+    g = lambda k, d='': kw.get(k, d)
+    if n == 'mat': return 'Mặt người nói' + (f" · nhấn zoom ở {g('nhan'):g}s" if g('nhan', None) is not None else '') + (' · đẩy cận' if g('push') else '')
+    if n == 'vanban': return f"Văn bản giấy: {_sb_txt(ar[2:3])} · {_sb_txt(ar[3:4])}" + (f" · dấu {g('stamp')}" if g('stamp') else '')
+    if n == 'ds': return f"Bảng '{g('title', 'CẦN BIẾT')}': " + '; '.join(str(x[0]) if isinstance(x, (list, tuple)) else str(x) for x in (ar[2] if len(ar) > 2 else [])) + (f" · kết: {g('ket')}" if g('ket') else '')
+    if n == 'so': return f"Số lớn {_sb_txt(ar[2:3])}{(' ' + g('unit')) if g('unit') else ''} · {_sb_txt(ar[3:4])}" + ''.join(f" · {k}: {g(k)}" for k in ('title', 'delta', 'note') if g(k))
+    if n == 'sat':
+        nm = ar[2] if len(ar) > 2 else kw.get('names', ''); nm = ' + '.join(nm) if isinstance(nm, (list, tuple)) else nm
+        return (f"Bản đồ vệ tinh {'3D ' if g('d3') else ''}{nm or ''}" + (f" · tên hiện: {g('label')}" if g('label') else '') + (f" · dòng phụ: {g('sub')}" if g('sub') else '')
+                + ''.join(f" · tuyến {r[0]}" for r in g('routes', ())) + ''.join(f" · ghim {p[0]}" for p in g('pins', ())))
+    if n == 'cta': return 'Kêu gọi cuối: ' + ('bình luận + ' if g('hoi', None) is not None else '') + 'FOLLOW VŨ' + (' · chủ đề: ' + ', '.join(c[0] for c in g('chu', ())) if g('chu') else '')
+    if n == 'R':
+        mk = ar[0]; s = ', '.join(f'{k}={_sb_txt(v)}' for k, v in mk.kw.items() if _sb_txt(v) and k not in ('t0', 't1'))
+        pos = ', '.join(_sb_txt(x) for x in mk.ar[3:] if isinstance(x, str))
+        return f"Đồ hoạ {mk.n}" + (f": {pos}" if pos else '') + (f" · {s}" if s else '')
+    return n
+def _sb_rows(DA):
+    import types
+    rec = []
+    class Mk:
+        def __init__(s, n, ar, kw): s.n, s.ar, s.kw = n, ar, kw
+    class JL(list):
+        def append(s, x): rec.append(('V', 'J', (x,), {}))
+    class Rec:
+        def __init__(s, ns): s._ns = ns
+        def __getattr__(s, n):
+            if n == 'J': return JL()
+            def f(*ar, **kw):
+                if s._ns == 'R': return Mk(n, ar, kw)
+                rec.append((s._ns, n, ar, kw))
+            return f
+    ns = {'V': Rec('V'), 'P': Rec('P'), 'C': Rec('C'), 'R': Rec('R'), 'N': Rec('R'), 'B': Rec('R'), 'X': Rec('R'), 'DL': Rec('R'), 'mg_v4': Rec('R'), 'MJ': Rec('R')}
+    exec(open(os.path.join(DA, 'scenes.py'), encoding='utf-8').read(), ns)
+    global WD, K, SUBS
+    WD, K = _load(DA), 0; SUBS.clear(); PEND.clear()
+    exec(open(os.path.join(DA, 'subs.py'), encoding='utf-8').read(), {'P': sys.modules[__name__]})
+    T = float(json.load(open(os.path.join(DA, 'state.json')))['T'])
+    sc, ev, hook = [], [], []
+    for nsn, n, ar, kw in rec:
+        num = len(ar) >= 2 and all(isinstance(x, (int, float)) for x in ar[:2])
+        if nsn == 'P' and n in SB_KIND and num: sc.append((ar[0], ar[1], SB_KIND[n], _sb_desc(n, ar, kw)))
+        elif nsn == 'V' and n == 'full' and ar and isinstance(ar[0], Mk) and len(ar[0].ar) >= 3: sc.append((ar[0].ar[1], ar[0].ar[2], 'ĐỒ HOẠ', _sb_desc('R', ar, kw)))
+        elif nsn == 'V' and n == 'L_person' and num: sc.append((ar[0], ar[1], 'MẶT', 'Mặt người nói'))
+        elif nsn == 'P' and n == 'hook': hook.append(f"HOOK: {ar[0] if ar else ''}")
+        elif nsn == 'V' and n == 'TR' and len(ar) > 1: ev.append((ar[1], f'chuyển {ar[0]}'))
+        elif nsn == 'C' and ar and isinstance(ar[0], (int, float)): ev.append((ar[0], {'dip': 'tối chuyển chương', 'leak': 'loé sáng câu đắt', 'focus': 'lấy nét về mặt', 'lens': 'ống kính vào bản đồ', 'letterbox': 'viền điện ảnh (cao trào)'}.get(n, n)))
+        elif nsn == 'V' and n == 'J':
+            for m in re.finditer(r'VC\.(punch|push|reset)\(([\d.]+)', str(ar[0])): ev.append((float(m[2]), {'punch': 'zoom nhấn', 'push': 'đẩy cận', 'reset': 'về khung'}[m[1]]))
+        elif nsn == 'V' and n == 'audio':
+            for t in kw.get('impacts', []) or []: ev.append((t, 'tiếng nhấn'))
+            for t in kw.get('duck', []) or []: ev.append((t, 'nhạc lặng trước câu đắt'))
+        elif nsn == 'P' and n == 'nhac': hook.append(f"NHẠC: {ar[0] if ar else 'tin'}")
+        elif nsn == 'P' and n == 'nen': hook.append(f"NỀN: {ar[0] if ar else 'do'}")
+    sc.sort(key=lambda x: x[0]); full = []; t = 0.0
+    for a, b, k, d in sc:
+        if a - t > .3: full.append((t, a, 'MẶT', 'Mặt người nói (giữa các cảnh)'))
+        full.append((a, b, k, d)); t = max(t, b)
+    if T - t > .3: full.append((t, T, 'MẶT', 'Mặt người nói (giữa các cảnh)'))
+    kws = [(p[2], f"[{({'s': 'ĐỎ', 'l': 'XANH', 'g': 'VÀNG', 'x': 'VÀNG'}).get(p[0][:1], p[0].upper())}{' TO' if 'xl' in p[0] else ''}] {p[1]}") for parts, _ in SUBS for p in parts if p != 'br' and p[0] != 'w']
+    rows = []
+    for n, (a, b, k, d) in enumerate(full):
+        loi = ' '.join(w['word'] for w in WD if a - .01 <= w['start'] < b - .01)
+        ch = '\n'.join(x for tt, x in kws if a - .01 <= tt < b - .01)
+        hi = '\n'.join(f'{tt:.1f}s {x}' for tt, x in sorted(ev) if a - .01 <= tt < b - .01)
+        if n == 0 and hook: ch = '\n'.join(hook) + ('\n' + ch if ch else '')
+        rows.append([str(n + 1), f'{a:.1f} – {b:.1f}', loi, k, d, ch, hi, '', ''])
+    return rows, full
+def _sb_font(sz, bold=False):
+    from PIL import ImageFont
+    for f in ([os.path.join(T_DIR, 'LPVDisplay-Black.ttf')] if bold else []) + ['/usr/share/fonts/truetype/google-fonts/ofl/montserrat/Montserrat[wght].ttf', '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf', 'C:/Windows/Fonts/arial.ttf']:
+        try: return ImageFont.truetype(f, sz)
+        except Exception: pass
+    return ImageFont.load_default()
+def _sb_thumb(DA, a, b, k, d, n):
+    from PIL import Image, ImageDraw
+    W, H = 270, 480; f = os.path.join(DA, 'qc', f'sb_{n}.jpg'); os.makedirs(os.path.dirname(f), exist_ok=True)
+    if k == 'MẶT':
+        subprocess.run(['ffmpeg', '-v', 'error', '-y', '-ss', f'{(a + b) / 2:.2f}', '-i', os.path.join(DA, 'cut', 'cut.mp4'), '-frames:v', '1', '-vf', f'scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H}', f])
+        if os.path.exists(f): return f
+    im = Image.new('RGB', (W, H), (22, 6, 8)); dr = ImageDraw.Draw(im)
+    for y in range(H): dr.line([(0, y), (W, y)], fill=(int(22 + 60 * y / H), 6, 10))
+    col = {'BẢN ĐỒ': (61, 242, 166), 'CON SỐ': (255, 210, 63), 'THÔNG TIN': (255, 210, 63), 'KÊU GỌI': (255, 210, 63)}.get(k, (255, 255, 255))
+    dr.text((18, 28), k, font=_sb_font(34, True), fill=col)
+    y = 90; words = d.split(); line = ''; fb = _sb_font(17)
+    for w in words:
+        if dr.textlength(line + ' ' + w, font=fb) > W - 36: dr.text((18, y), line.strip(), font=fb, fill=(235, 235, 235)); y += 24; line = ''
+        line += ' ' + w
+        if y > H - 60: break
+    dr.text((18, y), line.strip(), font=fb, fill=(235, 235, 235)); im.save(f, quality=88); return f
+def sb(DA, *a):
+    DA = os.path.abspath(os.path.expanduser(DA))
+    if '--read' in a: return _sb_read(DA, a[a.index('--read') + 1])
+    import openpyxl; from openpyxl.drawing.image import Image as XImg; from openpyxl.styles import Alignment, Font, PatternFill, Border, Side
+    from PIL import Image, ImageDraw
+    rows, full = _sb_rows(DA); th = [_sb_thumb(DA, *x, n) for n, x in enumerate(full)]
+    wb = openpyxl.Workbook(); ws = wb.active; ws.title = 'Storyboard'; ws.append(SB_COLS)
+    for j, w in enumerate([7, 12, 42, 12, 42, 26, 24, 20, 32]): ws.column_dimensions[chr(65 + j)].width = w
+    hd = PatternFill('solid', fgColor='7A0C12'); bd = Side(style='thin', color='BBBBBB')
+    for c in ws[1]: c.font = Font(bold=True, color='FFFFFF'); c.fill = hd; c.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+    ws.freeze_panes = 'C2'
+    for n, r in enumerate(rows):
+        ws.append(r); R_ = n + 2; ws.row_dimensions[R_].height = 185
+        for c in ws[R_]: c.alignment = Alignment(vertical='top', wrap_text=True); c.border = Border(top=bd, bottom=bd, left=bd, right=bd)
+        ws.cell(R_, 9).fill = PatternFill('solid', fgColor='FFF6D6')
+        if th[n]:
+            tp = th[n].replace('.jpg', '_x.png'); Image.open(th[n]).resize((135, 240)).save(tp); im = XImg(tp); ws.add_image(im, f'H{R_}')
+    ws.append([]); ws.append(['', '', 'Ghi chú: sửa thẳng ô (lời, hình, chữ nhấn, hiệu ứng) hoặc ghi yêu cầu ở cột ANH SỬA. Thêm cảnh: chèn dòng mới, ghi giây + nội dung. Gửi lại file cho em.'])
+    xp = os.path.join(DA, 'storyboard.xlsx'); wb.save(xp)
+    json.dump({'rows': rows}, open(os.path.join(DA, 'storyboard.json'), 'w', encoding='utf-8'), ensure_ascii=False)
+    cw, chh, nc = 270, 560, 6; nr = (len(rows) + nc - 1) // nc; sh_ = Image.new('RGB', (cw * nc, chh * nr), (12, 12, 12)); dr = ImageDraw.Draw(sh_)
+    for n, r in enumerate(rows):
+        x, y = (n % nc) * cw, (n // nc) * chh
+        if th[n]: sh_.paste(Image.open(th[n]).resize((cw - 6, 474)), (x + 3, y + 3))
+        dr.text((x + 8, y + 482), f'{r[0]} · {r[1]}s · {r[3]}', font=_sb_font(18), fill=(255, 210, 63))
+        dr.text((x + 8, y + 508), (r[2][:34] + '…') if len(r[2]) > 34 else r[2], font=_sb_font(14), fill=(220, 220, 220))
+    sh_.save(os.path.join(DA, 'storyboard.jpg'), quality=86)
+    print(f'✅ {xp} ({len(rows)} cảnh) + storyboard.jpg → gửi anh sửa; anh gửi lại → vc.py sb DA --read <file>')
+def _sb_read(DA, path):
+    import openpyxl
+    snap = json.load(open(os.path.join(DA, 'storyboard.json'), encoding='utf-8'))['rows']
+    ws = openpyxl.load_workbook(path).active; n = 0; seen = set()
+    for i, r in enumerate(ws.iter_rows(min_row=2, values_only=True)):
+        r = ['' if v is None else str(v) for v in r] + [''] * len(SB_COLS)
+        if not any(x.strip() for x in r) or r[2].startswith('Ghi chú: sửa thẳng'): continue
+        o = next((s for s in snap if s[0] == r[0].strip()), None)
+        if o is None: print(f'+ CẢNH MỚI (dòng {i + 2}): ' + ' | '.join(f'{SB_COLS[j]}: {r[j]}' for j in range(len(SB_COLS)) if r[j].strip() and SB_COLS[j] != 'ẢNH')); n += 1; continue
+        seen.add(o[0])
+        for j, col in enumerate(SB_COLS):
+            if col == 'ẢNH': continue
+            if r[j].strip() != o[j].strip(): print(f'Cảnh {o[0]} ({o[1]}s) · {col}:\n    trước: {o[j] or "—"}\n    anh sửa: {r[j] or "(xoá)"}'); n += 1
+    for s in snap:
+        if s[0] not in seen: print(f'- ANH XOÁ cảnh {s[0]} ({s[1]}s): {s[4]}'); n += 1
+    print(f'→ {n} chỗ anh sửa' if n else '→ anh không sửa gì → build')
+
 # ---------- bộ phong cách (tự xoay theo video) + cảnh mẫu 1 dòng ----------
 PACKS = [
     dict(ten='vang-tram', tr=['wipe', 'zoom', 'flash'], bg=['inkpanel', 'darkpanel', 'goldglow', 'diahinh', 'betong'], punch=1.15, accent='leak', ds=['phaply', 'stairs', 'hoso']),
@@ -1159,4 +1303,4 @@ def finish():
 
 if __name__ == '__main__':
     c, *a = sys.argv[1:]
-    {'setup': setup, 'go': go, 'cut': cut, 'build': build, 'out': out, 'wait': wait, 'grid': grid, 'ranh': ranh, 'speakers': speakers, 'xem': xem, 'diadanh': diadanh}[c](*a)
+    {'setup': setup, 'go': go, 'cut': cut, 'build': build, 'out': out, 'wait': wait, 'grid': grid, 'ranh': ranh, 'speakers': speakers, 'xem': xem, 'diadanh': diadanh, 'sb': sb}[c](*a)
