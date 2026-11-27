@@ -229,7 +229,7 @@ MOODS = {   # hợp âm (MIDI) · gốc bass · BPM · độ sáng · mô tả
     'hung_tin': dict(gain=-14, desc='hùng tráng + kịch tính (Rê thứ, 112 BPM): nền hùng tráng + ostinato/tích tắc của nhạc tin cùng giọng'),
 }
 # ---------- MỨC ÂM ANH VŨ ĐÃ DUYỆT (22/11/2026) — mặc định cho mọi video ----------
-NHAC_MACDINH = 'hung_tin'   # nhạc nền mặc định (anh Vũ chốt 26/11/2026): hùng tráng + kịch tính, gain -14 dB
+NHAC_MACDINH = 'tin'   # nhạc nền mặc định (anh Vũ chốt 27/11/2026, video M'Drắk): đưa tin – phân tích, kịch tính (La thứ, 96 BPM), gain -8 dB như bản anh duyệt · trước: 'hung_tin'
 SFX_DB = -9            # hiệu ứng trong lời (whoosh, pop, chuyển cảnh…) — nhỏ, không gây khó chịu
 CINE_DB = dict(impact=-17, reverse=-22, braam=-19, tape=-20, heart=-18, shimmer=-23, camera=-21, rumble=-23, ranh=-20, countup=-22, paper=-20)   # âm điện ảnh / máy đếm / vẽ viền
 CINE_DB_KHAC = -22
