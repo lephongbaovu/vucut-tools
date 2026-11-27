@@ -1198,7 +1198,7 @@ def tangtruong(i, a, b, t0, value, years=(), unit='%', kicker='KINH TẾ', title
     s += _ground(I, i, -.4, -.6, n * 1.7 + .2, 1.4, 'hsl(220,10%,22%)', side=.3)
     for k, v in enumerate(vals):
         h = .6 + 4.0 * v / mx; x = k * 1.7
-        lab = (f'<g class="yl">' + _t(*I(x + .5, 1.6), years[k][0], 15, MUT, 'middle', w=800) + _t(I(x + .5, .5, h + .3)[0], I(x + .5, .5, h + .3)[1], years[k][1], 17, FG, 'middle', w=900) + '</g>') if years else ''
+        lab = (f'<g class="yl">' + _t(*I(x + .5, 1.6), years[k][0], 15, MUT, 'middle', w=800) + (_t(*I(x - .25, .5, h - .2), years[k][1], 22, FG, 'end', w=900) if k == 0 and n > 1 else _t(*I(x + 1.25, .5, h - .2), years[k][1], 22, FG, 'start', w=900) if k == n - 1 and n > 1 else _t(*I(x + .5, .5, h + .3), years[k][1], 17, FG, 'middle', w=900)) + '</g>') if years else ''   # anh 27/11: số 2 cột ngoài dời ra 2 bên, không bị cột/mũi tên che
         s += _box(I, x, 0, 1.0, 1.0, h, 'url(#' + i + 'bt)', f'hsla(44,90%,55%,{.55 + .35 * k / n:.2f})', f'hsla(38,85%,40%,{.6 + .3 * k / n:.2f})', 'br') + lab
     ax0, ay0 = I(-.2, .5, 1.2); ax1, ay1 = I(n * 1.7 - .4, .5, 5.6)
     s += f'<path class="ar" d="M{ax0:.0f} {ay0:.0f} C{ax0 + 120:.0f} {ay0 - 10:.0f} {ax1 - 140:.0f} {ay1 + 60:.0f} {ax1:.0f} {ay1:.0f}" stroke="#3ddc84" stroke-width="12" fill="none" stroke-linecap="round" filter="url(#{i}gl)" pathLength="1"/>'
