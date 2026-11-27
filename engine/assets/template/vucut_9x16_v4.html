@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><title>vucut v4</title>
+<!-- vucut v4 · khung cho vc_build.py: __T__ (độ dài), __RM__ (đoạn lặng đã rút từ tighten.py), <!--ROOT--> (phần tử), //JS (timeline).
+     Thứ tự DOM: người nói → vignette → [panel/đồ hoạ/chữ] → thẻ viền → quét → tiến độ → hạt phim → lớp tách nền → glitch. -->
+<link rel="stylesheet" href="lib/vucut.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:720px;height:1280px;overflow:hidden;background:#0a0a0a}
+#root{position:relative;width:720px;height:1280px;overflow:hidden;--u:1px}
+#personWrap{width:720px;height:1280px}
+#person{left:0;top:0;width:720px;height:1280px}
+</style></head><body>
+<div id="root" data-composition-id="master" data-start="0" data-duration="__T__" data-width="720" data-height="1280">
+<div id="personWrap"><img id="person" alt=""></div>
+<div class="vignette"></div>
+<!--ROOT-->
+<div id="cardo"></div>
+<div id="pip"><img id="pipImg" alt=""></div>
+<div id="trWipe"></div>
+<div id="prog"><i><b></b></i><i><b></b></i><i><b></b></i></div>
+<div id="grain"></div>
+<div id="cutWrap"><img id="personCut" alt=""></div>
+<div class="glitch" id="vcGlitch"></div><div class="flash" id="vcFlash"></div>
+</div>
+<script src="lib/gsap.min.js"></script><script src="lib/vucut.js"></script>
+<script>
+(function(){
+window.__timelines=window.__timelines||{};
+var tl=gsap.timeline({paused:true});
+// TM: dời mốc viết theo cut.mp4 sang video đã rút lặng (tighten.py). RM rỗng = không đổi.
+var RM=__RM__;function TM(t){var d=0;for(var k=0;k<RM.length;k++){var a=RM[k][0],b=RM[k][1];if(t>=b)d+=b-a;else if(t>a)d+=t-a;}return t-d;}
+['to','set','fromTo'].forEach(function(f){var o=tl[f].bind(tl);tl[f]=function(){var g=Array.prototype.slice.call(arguments),i=f==='fromTo'?3:2;if(typeof g[i]==='number')g[i]=TM(g[i]);return o.apply(null,g);};});
+window.__timelines.master=tl; VC.use(tl);
+VC.face(.47,.38);   // tâm phóng = mặt (đo trên khung)
+//JS
+})();
+</script></body></html>

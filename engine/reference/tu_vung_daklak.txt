@@ -1,0 +1,8 @@
+# Từ vựng mồi cho Whisper (prompt) — mỗi dòng một cụm; thêm/bớt thoải mái. Dự án riêng: tạo DA/tu_vung.txt cùng định dạng.
+Đắk Lắk, Buôn Ma Thuột, Tuy Hòa, Phú Yên, Tây Nguyên, Nam Trung Bộ
+Buôn Hồ, Ea Kar, Ea Súp, Ea H'leo, Krông Pắc, Krông Năng, Krông Búk, Krông Ana, Krông Bông, Cư M'gar, Cư Kuin, Buôn Đôn, M'Drắk, Lắk
+Sông Hinh, Sông Cầu, Đông Hòa, Tây Hòa, Phú Hòa, Sơn Hòa, Tuy An, Đồng Xuân, Đà Rằng, Srêpốk, Ê Đê
+cảng Vũng Rô, cảng Bãi Gốc, đèo Cả, cửa khẩu Đắk Ruê, Nam Vân Phong, sân bay Buôn Ma Thuột, sân bay Tuy Hòa
+cao tốc Khánh Hòa – Buôn Ma Thuột, CT.23, quốc lộ 14, quốc lộ 26, quốc lộ 27, quốc lộ 29, đường Hồ Chí Minh, đường vành đai
+quy hoạch tỉnh, quy hoạch chung, quy hoạch phân khu, quy hoạch 1/2000, quy hoạch 1/500, bảng giá đất, giải phóng mặt bằng
+chủ trương đầu tư, PPP, BOT, đầu tư công, giải ngân, khởi công, thông xe kỹ thuật, khu công nghiệp Hòa Phú, khu kinh tế Nam Phú Yên

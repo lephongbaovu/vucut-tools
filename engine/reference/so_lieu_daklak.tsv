@@ -1,0 +1,4 @@
+# Kho số liệu Đắk Lắk dùng lại giữa các video. Chỉ thêm dòng khi người dùng đã XÁC NHẬN số + nguồn.
+# Trước khi dùng một dòng: số liệu cũ hơn 6 tháng hoặc trạng thái dự án có thể đã đổi → hỏi lại người dùng.
+# Cột: chủ đề <TAB> số liệu <TAB> đơn vị/nhãn <TAB> nguồn (văn bản / cơ quan / bài báo) <TAB> ngày nguồn (YYYY-MM) <TAB> trạng thái (khaithac|thicong|pheduyet|dexuat|-) <TAB> ghi chú
+chu_de	so_lieu	nhan	nguon	ngay	trang_thai	ghi_chu

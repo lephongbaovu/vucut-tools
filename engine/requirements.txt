@@ -1,0 +1,7 @@
+# vucut · thư viện Python (đã kiểm thử Python 3.10–3.13). Cài: python -m pip install -r requirements.txt
+numpy>=1.24,<3
+Pillow>=10,<14
+scipy>=1.10,<2
+opencv-python-headless>=4.8,<5
+faster-whisper>=1.0.3,<2
+# tuỳ chọn (cảnh SPLIT đầu nổi): rembg[cpu]>=2.0.60,<3   ← vucut.py setup --rembg tự cài

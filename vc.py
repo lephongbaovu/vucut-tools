@@ -187,8 +187,7 @@ def _assemble(DA):
     kind = (re.search(r"KIND\s*=\s*'(\w+)'", sc) or [0, 'phantich'])[1]; vc = VC()
     head = os.path.join(DA, 'facetrack.json'); face = tuple(st.get('face') or (.5, .38))
     src = (f"import sys, os; sys.path[:0] = [r'{vc}/scripts', r'{T_DIR}']\n"
-           "import vc_build as V, mg_nganh as N, cine as C, vc as P\n"
-           "import mg_x as X, mg_bds as B, mg_dl as DL, mg_v4, mg_journey as MJ, mg\n"
+           "import vc_build as V, vc_patch, cine as C, vc as P\n"
            "import mg_real as R\n"
            f"V.init(T={st['T']}, face={face}, head=r'{head}', kind='{kind}')\n"
            f"C.init(r'{DA}'); P.init(V, r'{DA}')\n# ---- scenes.py ----\n{sc}\n# ---- hết scenes ----\n"
@@ -323,7 +322,7 @@ def out(DA):
     for f in ('final_audio_base.m4a', 'final_audio.m4a'):
         if os.path.exists(os.path.join(DA, f)): os.remove(os.path.join(DA, f))
     sh(f'python3 {T_DIR}/cine_sfx.py sfx', cwd=DA, tail=1)
-    sh(f'{PY()} audio {DA}', keep='LUFS|✖')
+    sh(f'{PY()} audio {DA} --no-music', keep='LUFS|✖')
     _remix(DA)
     _layer(DA)
     sp, dn = os.path.join(DA, 'splits.json'), os.path.join(DA, 'splits.done.json')
@@ -576,104 +575,20 @@ def _tam(rings):   # tâm THỊ GIÁC của vùng (điểm trong vùng xa mép n
     d = np.where(inside, d, -1) - np.where((px > 470) & (py > 540), 1e4, 0)   # né khung người nói
     k = int(d.argmax()); return float(px[k]), float(py[k]), float(max(d[k], 30))
 
-def map_ranh(i, a, b, names=(), t_draw=None, label='', sub='', km2=False, routes=(), pins=(), center=None, km=6, d3=False, areas=(), border=(), focus=None, t_focus=None, rise=None, focus_sub=''):
+def map_ranh(i, a, b, names=(), t_draw=None, label='', sub='', km2=False, routes=(), pins=(), center=None, km=6, d3=True, areas=(), border=(), focus=None, t_focus=None, rise=None, focus_sub=''):
     """bản đồ vệ tinh: zoom từ xa vào · xã/phường (names) viền vàng tự vẽ + vệt trắng chạy · tuyến đường (routes) xanh sáng tự vẽ · ghim (pins)
     routes=[('QUỐC LỘ 14', ['buonmathuot', 'Ea Kao'], t)] · pins=[('SÂN BAY', 'sanbaybmt', t)] · center=(điểm) km= bán kính khi không có xã"""
     D = _dtinh(); names = [names] if isinstance(names, str) else list(names); ks = [_pick(D, s) for s in names]
     t_draw = max(a + 1.2, a + .35 if t_draw is None else t_draw); DR = 1.0
     RT = [(lb, _road(w), (t if t is not None else t_draw + .3 + .4 * n)) for n, (lb, w, *t_) in enumerate(routes) for t in [t_[0] if t_ else None]]
     PN = [(lb, _pt(p), (t_[0] if t_ else t_draw + .5 + .3 * n)) for n, (lb, p, *t_) in enumerate(pins)]
-    if d3: return _sat3d(i, a, b, D, ks, t_draw, label, sub, RT, PN, center, km, [(lb, _pt(p)) for lb, p in areas], [_pick(D, x) for x in ([border] if isinstance(border, str) else border)],
+    if km2 and len(ks) == 1 and D[ks[0]].get('km2'): sub = sub or f"{D[ks[0]]['km2']:g} km²"
+    return _sat3d(i, a, b, D, ks, t_draw, label, sub, RT, PN, center, km, [(lb, _pt(p)) for lb, p in areas], [_pick(D, x) for x in ([border] if isinstance(border, str) else border)],
                           FK=_pick(D, focus) if focus else None, TF=t_focus, RISE=rise, FSUB=focus_sub)
-    pts = [p for k in ks for r in D[k]['r'] for p in r] + [p for _, ln, _ in RT for p in ln] + [p for _, p, _ in PN]
-    if center is not None or not pts:
-        cx_, cy_ = _pt(center) if center is not None else (pts[0] if pts else (108.038, 12.667)); dl = km / 111
-        pts = (pts if ks else []) + [(cx_ - dl, cy_ - dl), (cx_ + dl, cy_ + dl)]
-    x0, x1 = min(p[0] for p in pts), max(p[0] for p in pts); y0, y1 = min(p[1] for p in pts), max(p[1] for p in pts)
-    BX = (70, 170, 650, 640)
-    z = 18
-    while z > 8:
-        ax, ay = _wm(x0, y1, z); bx, by = _wm(x1, y0, z)
-        if (bx - ax) <= (BX[2] - BX[0]) * 1.5 and (by - ay) <= (BX[3] - BX[1]) * 1.5: break
-        z -= 1
-    ax, ay = _wm(x0, y1, z); bx, by = _wm(x1, y0, z); k_ = min((BX[2] - BX[0]) / max(1, bx - ax), (BX[3] - BX[1]) / max(1, by - ay))
-    cxp, cyp = (ax + bx) / 2, (ay + by) / 2; ox, oy = (BX[0] + BX[2]) / 2, (BX[1] + BX[3]) / 2
-    def S(lon, lat): px, py = _wm(lon, lat, z); return ox + (px - cxp) * k_, oy + (py - cyp) * k_
-    def box(zz, f):
-        s = k_ * 2 ** (z - zz); c = (cxp / 2 ** (z - zz), cyp / 2 ** (z - zz))
-        X0, Y0 = c[0] - (ox + 720 * (f - 1) / 2) / s, c[1] - (oy + 1280 * (f - 1) / 2) / s
-        return _tiles(zz, X0, Y0, X0 + 720 * f / s, Y0 + 1280 * f / s), f
-    det, fd = box(z, 1.08); wid, fw = box(max(1, z - 2), 4.0)
-    def path(rs, close=True): return ''.join('M' + 'L'.join(f'{x:.1f} {y:.1f}' for x, y in (S(*p) for p in r)) + ('Z' if close else '') for r in rs)
-    def plen(r, close=True): q = [S(*p) for p in r] + ([S(*r[0])] if close else []); return sum(math.dist(q[n], q[n + 1]) for n in range(len(q) - 1))
-    js = [f"tl.set('#{i}',{{autoAlpha:0}},0);", f"tl.set('#{i}',{{autoAlpha:1}},{a});"]
-    tz = t_draw - .15; lap = 2.2; svg = ''
-    js += [f"tl.fromTo('#{i} .cam',{{scale:{1 / 2.8:.4f},transformOrigin:'{ox:.0f}px {oy:.0f}px'}},{{scale:1,duration:{tz - a:.2f},ease:'power2.inOut'}},{a});",
-           f"tl.to('#{i} .dt',{{opacity:1,duration:{min(.8, (tz - a) * .5):.2f}}},{tz - min(.8, (tz - a) * .5):.2f});",
-           f"tl.fromTo('#{i} .cam',{{scale:1}},{{scale:1.04,duration:{max(.5, b - tz):.2f},ease:'none'}},{tz:.2f});"]
-    def chip(x, y, txt, col, cls, t):
-        w = len(txt) * 12 + 28; x = min(max(x, 50 + w / 2), 650 - w / 2); y = min(max(y, 190), 650)
-        js.extend([f"tl.set('#{i} .{cls}',{{opacity:0}},0);", f"tl.to('#{i} .{cls}',{{opacity:1,duration:.3}},{t:.2f});"])
-        return (f'<g class="{cls}"><rect x="{x - w / 2:.0f}" y="{y - 18:.0f}" width="{w:.0f}" height="34" rx="8" fill="rgba(8,20,14,.72)" stroke="{col}" stroke-width="2"/>'
-                f'<text x="{x:.0f}" y="{y + 6:.0f}" text-anchor="middle" font-family="VCB,sans-serif" font-weight="800" font-size="19" fill="{col}">{txt}</text></g>')
-    if ks:
-        allp = ''.join(path(D[k]['r']) for k in ks); L = sum(plen(r) for k in ks for r in D[k]['r'])
-        ccx, ccy, rin = _tam([[S(*p) for p in r] for k in ks for r in D[k]['r']])
-        ttl = label or (D[ks[0]]['full'].upper() if len(ks) == 1 else ' · '.join(D[k]['ten'].upper() for k in ks))
-        if km2 and len(ks) == 1 and D[ks[0]].get('km2'): sub = sub or f"{D[ks[0]]['km2']:g} km²"
-        fs_ = int(max(30, min(78, 2.2 * rin / (len(ttl) * .62), .95 * rin, 600 / (len(ttl) * .64)))); hw = len(ttl) * fs_ * .32
-        ccx = min(max(ccx, 60 + hw), 660 - hw); ccy = min(max(ccy + fs_ * .35, 200), 600)   # ccy: đường chân chữ → tâm chữ đúng tâm vùng
-        nlap = max(0, int((b - t_draw - DR) / lap))
-        svg += (f'<path class="dim" d="M0 0H720V1280H0Z{allp}" fill="#000" fill-rule="evenodd" opacity="0"/>'
-                f'<path class="gl" d="{allp}" fill="none" stroke="#F0C460" stroke-width="16" stroke-linejoin="round" stroke-linecap="round" filter="url(#{i}g)" opacity=".85" stroke-dasharray="{L:.0f} {L:.0f}" stroke-dashoffset="{L:.0f}"/>'
-                f'<path class="ln" d="{allp}" fill="none" stroke="#F6D37E" stroke-width="5" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="{L:.0f} {L:.0f}" stroke-dashoffset="{L:.0f}"/>'
-                f'<path class="cm" d="{allp}" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-dasharray="{L * .1:.0f} {L * .9:.0f}" filter="url(#{i}g2)" opacity="0"/>')
-        tt = (f'<g class="tt"><text x="{ccx:.0f}" y="{ccy:.0f}" text-anchor="middle" font-family="VCB,sans-serif" font-weight="800" font-size="{fs_}" letter-spacing="1" fill="#F2CC74" '
-              f'style="paint-order:stroke;stroke:rgba(0,0,0,.55);stroke-width:5px;filter:drop-shadow(0 2px 8px rgba(0,0,0,.8))">{ttl}</text>'
-              + (f'<text x="{ccx:.0f}" y="{ccy + fs_ * .9:.0f}" text-anchor="middle" font-family="VCB,sans-serif" font-weight="800" font-size="{int(fs_ * .55)}" fill="#fff" '
-                 f'style="paint-order:stroke;stroke:rgba(0,0,0,.6);stroke-width:4px">{sub}</text>' if sub else '') + '</g>')
-        js += [f"tl.to('#{i} .dim',{{opacity:.5,duration:.5}},{tz:.2f});",
-               f"tl.to('#{i} .ln',{{strokeDashoffset:0,duration:{DR},ease:'none'}},{t_draw:.2f});",
-               f"tl.to('#{i} .gl',{{strokeDashoffset:0,duration:{DR},ease:'none'}},{t_draw:.2f});",
-               f"tl.set('#{i} .tt',{{opacity:0,y:8}},0);", f"tl.to('#{i} .tt',{{opacity:1,y:0,duration:.4,ease:'power2.out'}},{t_draw + DR * .7:.2f});",
-               f"tl.set('#{i} .cm',{{opacity:1}},{t_draw + DR:.2f});",
-               f"tl.fromTo('#{i} .cm',{{strokeDashoffset:0}},{{strokeDashoffset:{-L:.0f},duration:{lap},repeat:{nlap},ease:'none'}},{t_draw + DR:.2f});"]
-    else:
-        tt = ''; js.append(f"tl.fromTo('#{i} .vg',{{opacity:0}},{{opacity:.45,duration:.5}},{tz:.2f});")
-        svg += '<rect class="vg" width="720" height="1280" fill="#000" opacity="0"/>'
-    for n, (lb, ln, t) in enumerate(RT):   # tuyến đường xanh sáng (như QUỐC LỘ 14 trong mẫu)
-        L2 = plen(ln, False); d = path([ln], False); mid = S(*ln[len(ln) // 2])
-        svg += (f'<path class="rg{n}" d="{d}" fill="none" stroke="#FF1A1A" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" filter="url(#{i}g)" opacity=".8" stroke-dasharray="{L2:.0f} {L2:.0f}" stroke-dashoffset="{L2:.0f}"/>'
-                f'<path class="rl{n}" d="{d}" fill="none" stroke="#FF6A5A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="{L2:.0f} {L2:.0f}" stroke-dashoffset="{L2:.0f}"/>')
-        js += [f"tl.to('#{i} .rg{n},#{i} .rl{n}',{{strokeDashoffset:0,duration:1.1,ease:'power1.inOut'}},{t:.2f});"]
-        if lb: svg += chip(mid[0], mid[1] - 30, lb, '#FF7A6B', f'rc{n}', t + .6)
-    for n, (lb, p, t) in enumerate(PN):
-        x, y = S(*p)
-        svg += (f'<g class="pn{n}"><circle cx="{x:.0f}" cy="{y:.0f}" r="9" fill="#F2CC74" stroke="#fff" stroke-width="3"/>'
-                f'<circle class="pr{n}" cx="{x:.0f}" cy="{y:.0f}" r="9" fill="none" stroke="#F2CC74" stroke-width="3"/></g>')
-        js += [f"tl.set('#{i} .pn{n}',{{opacity:0}},0);", f"tl.to('#{i} .pn{n}',{{opacity:1,duration:.25}},{t:.2f});",
-               f"tl.fromTo('#{i} .pr{n}',{{attr:{{r:9}},opacity:1}},{{attr:{{r:34}},opacity:0,duration:1,repeat:2}},{t:.2f});"]
-        if lb: svg += chip(x, y - 34, lb, '#F2CC74', f'pc{n}', t + .1)
-    html = (f'<div class="vc" data-mg="ranh" id="{i}" style="left:0;top:0;width:720px;height:1280px;z-index:7;overflow:hidden;background:#0b0c0a">'
-            f'<div class="cam" style="position:absolute;left:0;top:0;width:720px;height:1280px">'
-            f'<img class="wd" src="data:image/jpeg;base64,{_b64(wid.resize((1440, 2560)), 72)}" style="position:absolute;left:{-720 * (fw - 1) / 2:.0f}px;top:{-1280 * (fw - 1) / 2:.0f}px;width:{720 * fw:.0f}px;height:{1280 * fw:.0f}px"/>'
-            f'<img class="dt" src="data:image/jpeg;base64,{_b64(det, 82)}" style="position:absolute;left:{-720 * (fd - 1) / 2:.0f}px;top:{-1280 * (fd - 1) / 2:.0f}px;width:{720 * fd:.0f}px;height:{1280 * fd:.0f}px;opacity:0"/></div>'
-            f'<svg viewBox="0 0 720 1280" width="720" height="1280" style="position:absolute;left:0;top:0"><defs>'
-            f'<filter id="{i}g" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="9"/></filter>'
-            f'<filter id="{i}g2" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="2.5"/></filter></defs>'
-            f'{svg}{tt}<text class="cr" x="40" y="985" font-family="VCB6,sans-serif" font-weight="600" font-size="14" fill="rgba(255,255,255,.55)">Ảnh vệ tinh: Google · '
-            + ('Ranh giới 2025: Bộ NN&amp;MT' if ks else '') + (' · ' if ks and RT else '') + ('Tuyến: OpenStreetMap' if RT else '') + '</text></svg></div>')
-    js.append(f"tl.set('#{i}',{{autoAlpha:0}},{b});")
-    if DA_:
-        import cine
-        if ks or RT: os.makedirs(os.path.join(DA_, 'sfx'), exist_ok=True); _sfx_ranh(os.path.join(DA_, 'sfx', 'ranh.wav'), DR)
-        if ks: cine.sfx(t_draw - .05, 'ranh')
-        for _, _, t in RT: cine.sfx(t - .05, 'ranh')   # tuyến đường: cùng âm vẽ viền (anh yêu cầu 26/11/2026)
-    return html, js, [(a, 'whoosh')] + [(t, 'pop') for _, _, t in PN]
 
 # ---------- BẢN ĐỒ VỆ TINH 3D (P.sat(..., d3=True)) — anh duyệt mẫu Liên Sơn Lắk 26/11/2026 ----------
 # Ảnh Google + độ cao AWS Terrain (phóng ×1.8) dựng bằng three.js → chuỗi khung DA/s3d/<mã>/NNNN.jpg (đệm theo mã, build lại không dựng lại)
-# → trình dựng (preview.mjs đã vá ở setup) lắp khung theo giây qua <img data-seq>. Chỉ xã/phường; có routes/pins → tự về 2D.
+# → trình dựng (preview.mjs đã vá ở setup) lắp khung theo giây qua <img data-seq>. Mọi bản đồ đều 3D (bản 2D đã bỏ 27/11/2026); d3= chỉ giữ cho tương thích.
 S3D_HTML = r"""<!doctype html><html><head><meta charset="utf-8"><style>
 @font-face{font-family:LPV;src:url(LPV.ttf)}html,body{margin:0;width:720px;height:1280px;overflow:hidden;background:#0b1016}canvas{position:absolute;left:0;top:0}
 #vig{position:absolute;inset:0;background:radial-gradient(120% 80% at 50% 45%,rgba(0,0,0,0) 45%,rgba(0,0,0,.55) 100%),linear-gradient(180deg,rgba(0,0,0,.5) 0%,rgba(0,0,0,0) 18%,rgba(0,0,0,0) 70%,rgba(0,0,0,.6) 100%)}
@@ -809,12 +724,14 @@ PREVIEW_PATCH = ("    window.__timelines.master.seek(t, false);\n  }, [frameFile
                  "      const src = el.dataset.seq.replace('%04d', String(+el.dataset.f || 0).padStart(4, '0'));\n"
                  "      if (el.getAttribute('src') !== src) { el.setAttribute('src', src); await el.decode().catch(() => {}); } }\n"
                  "  }, [frameFile")
+ENGINE = os.path.join(HOME, 'repo', 'engine')   # 27/11/2026: toàn bộ mã dựng nằm trong kho vucut-tools/engine; skill chỉ còn SKILL.md
 def _skill_copy(vc):   # chép skill sang ~/.vucut/skill + vá preview.mjs (lắp chuỗi khung 3D) — skill gốc chỉ đọc
     dst = os.path.join(HOME, 'skill')
+    if os.path.isdir(os.path.join(ENGINE, 'scripts')): vc = ENGINE
     if os.path.abspath(vc) != dst: subprocess.run(['rm', '-rf', dst]); shutil.copytree(vc, dst)
     pm = os.path.join(dst, 'scripts', 'preview.mjs'); s = open(pm, encoding='utf-8').read()
     if PREVIEW_PATCH[0] in s: open(pm, 'w', encoding='utf-8').write(s.replace(PREVIEW_PATCH[0], PREVIEW_PATCH[1], 1))
-    else: print('  ⚠ không vá được preview.mjs — bản đồ 3D sẽ đứng hình'); 
+    elif PREVIEW_PATCH[1] not in s: print('  ⚠ không vá được preview.mjs — bản đồ 3D sẽ đứng hình')
     return dst
 def _three():
     d = os.path.join(HOME, 'three')
@@ -1090,28 +1007,14 @@ def mau(k='nhu'):   # P.mau('nhu'|'sampanh'|'hong') đầu scenes.py — màu nh
     global FOIL
     MAU['k'] = k; FOIL = _pal(FOIL0)
 # ---------- bộ phong cách (tự xoay theo video) + cảnh mẫu 1 dòng ----------
-PACKS = [
-    dict(ten='vang-tram', tr=['wipe', 'zoom', 'flash'], bg=['inkpanel', 'darkpanel', 'goldglow', 'diahinh', 'betong'], punch=1.15, accent='leak', ds=['phaply', 'stairs', 'hoso']),
-    dict(ten='xanh-ha-tang', tr=['zoom', 'whip', 'wipe'], bg=['diahinh', 'greenglow', 'darkpanel', 'diagpanel', 'inkpanel'], punch=1.12, accent='lens', ds=['stairs', 'hoso', 'phaply']),
-    dict(ten='do-tin-nong', tr=['flash', 'wipe', 'glitch'], bg=['redglow', 'darkpanel', 'betong', 'inkpanel', 'diagpanel'], punch=1.18, accent='dip', ds=['hoso', 'phaply', 'stairs']),
-    dict(ten='giay-sang', tr=['wipe', 'flash', 'zoom'], bg=['darkpanel', 'goldglow', 'inkpanel', 'diahinh', 'redglow'], punch=1.14, accent='focus', ds=['phaply', 'hoso', 'stairs']),
-]
-ST = {'pack': None, 'k': 0, 'bg': 0, 'tr': -9, 'n': 0, 'ds': 0}
-def _pack():
-    if ST['pack'] is None:
-        import hashlib; h = int(hashlib.md5(os.path.basename(DA_ or 'x').encode()).hexdigest(), 16); ST['pack'] = PACKS[h % len(PACKS)]
-        print(f"  · phong cách video này: {ST['pack']['ten']}")
-    return ST['pack']
+ST = {'n': 0, 'ds': 0}
+PUNCH = 1.15   # punch-in cảnh mặt
 def _id(p): ST['n'] += 1; return f'{p}{ST["n"]}'
-def _bg(a, b, kind=None):
-    pk = _pack(); kind = kind or pk['bg'][ST['bg'] % len(pk['bg'])]; ST['bg'] += 1; V.panel(_id('bg'), kind, a, b, seed=ST['n']); return kind
-def _tr(a):   # chuyển cảnh trang trí ≤ 1/8 s, xoay loại
-    pk = _pack()
-    if a - ST['tr'] >= 8: V.TR(pk['tr'][ST['k'] % len(pk['tr'])], a); ST['k'] += 1; ST['tr'] = a
+def _tr(a): pass   # chuyển cảnh do _morph() lo (mặc định CẮT GỌN, anh chốt 27/11/2026) — giữ tên hàm cho tương thích
 def mat(a, b, nhan=None, push=False):   # cảnh mặt: tự reset zoom, nhấn ở giây `nhan`, push chậm nếu câu kể
     V.L_person(a, b); s = f"VC.reset({a});"
     if push: s += f"VC.push({a + .1:.2f},1.07,{min(4, b - a - .2):.2f});"
-    if nhan is not None: s += f"VC.punch({nhan},{_pack()['punch']});"
+    if nhan is not None: s += f"VC.punch({nhan},{PUNCH});"
     V.J.append(s)
 NEN = {   # nền cảnh đồ hoạ (P.nen) — tối giản, sang; chữ trắng/vàng của bộ R. vẫn nổi
     'do':   'url(\'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22300%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%22.85%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3CfeColorMatrix values=%220 0 0 0 .95 0 0 0 0 .12 0 0 0 0 .14 0 0 0 9 -4.6%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22 opacity=%22.35%22/%3E%3C/svg%3E\') 0 0/300px 300px,radial-gradient(70% 18% at 50% 104%,rgba(160,14,22,.4),rgba(160,14,22,0) 70%),radial-gradient(70% 50% at 100% 60%,#8a0c12 0%,#4a060a 40%,rgba(10,2,3,0) 80%),linear-gradient(160deg,#070203 0%,#110304 60%,#170305 100%)',   # ĐỎ TRẦM hạt nhiễu — MẶC ĐỊNH (anh duyệt 23/11/2026)
@@ -1205,7 +1108,6 @@ def so(a, b, value, label='', t=None, unit='', title='', note='', delta=''):   #
     if DA_ and re.fullmatch(r'[\d.,]+', str(value).strip()):   # tiếng máy đếm số chạy theo nhịp số (expo.out 1.2 s) + tiếng chốt sáng khi dừng
         import cine; os.makedirs(os.path.join(DA_, 'sfx'), exist_ok=True); _sfx_count(os.path.join(DA_, 'sfx', 'countup.wav')); cine.sfx(t, 'countup')
 def hinh(a, b, fn, *args, nen=None, **kw):   # bất kỳ hình nào: P.hinh(a, b, R.caotoc, t0, …) — hình bộ chân thực có nền riêng; tự chuyển cảnh + khung người nói
-    if not getattr(fn, '__module__', '').startswith('mg_real'): _bg(a, b, nen)
     i = _id('h'); r = fn(i, a, b, *args, **kw)
     if isinstance(r, tuple) and len(r) == 3 and DA_ and any(c[1] == 'count' for c in r[2]):   # số đếm → tiếng máy đếm + chốt (như P.so)
         import cine; os.makedirs(os.path.join(DA_, 'sfx'), exist_ok=True); _sfx_count(os.path.join(DA_, 'sfx', 'countup.wav'))
@@ -1217,12 +1119,6 @@ def sat(a, b, names=(), **kw):   # bản đồ vệ tinh: xã/phường · route
     V.full(map_ranh(_id('sat'), a, b, names, **kw)); V.L_full(a, b, 'SAT')
 def R():
     import mg_real as m; return m
-def mg_v4():
-    import mg_v4 as m; return m
-def B():
-    import mg_bds as m; return m
-def X():
-    import mg_x as m; return m
 
 # ---------- dùng trong build.py ----------
 V = DA_ = None; WD = []; K = 0; SUBS = []; KIN = []; EXTRA = []; SPK = []
@@ -1352,6 +1248,29 @@ def finish():
     V.H.append('<style id="phude">' + font_css() + lpv_css() + CSS + ''.join(KCSS.replace('#K', '#' + k) for k in KIN) + ''.join(EXTRA) + '</style>')
     print(f'  ✓ phụ đề: {len(SUBS)} cụm · {len(WD)} từ')
 
+def kiemtra(DA=None):   # vc.py kiemtra [DA] — soát nhanh sau mỗi lần sửa công cụ (27/11/2026)
+    """1) nạp được mọi module + JS không lỗi cú pháp  2) có DA: dựng lại, chụp 16 khung, so với bản chụp mốc DA/qc_mau (lần đầu → lưu làm mốc)"""
+    import importlib, numpy as np; from PIL import Image
+    vc = VC(); ok = True; sys.path[:0] = [os.path.join(vc, 'scripts'), T_DIR]
+    for m in ('vc_build', 'vc_patch', 'cine', 'mg_real', 'theme'):
+        try: importlib.import_module(m); print(f'  ✓ {m}')
+        except Exception as e: ok = False; print(f'  ✖ {m}: {e}')
+    for f in (os.path.join(vc, 'assets', 'vucut.js'), os.path.join(T_DIR, 'qc_gate.cjs'), os.path.join(vc, 'scripts', 'preview.mjs')):
+        r = subprocess.run(['node', '--check', f], capture_output=True, text=True)
+        ok &= r.returncode == 0; print(('  ✓ ' if r.returncode == 0 else '  ✖ ') + os.path.basename(f) + ('' if r.returncode == 0 else ' ' + r.stderr[-300:]))
+    if DA:
+        DA = os.path.abspath(os.path.expanduser(DA)); build(DA)
+        T = json.load(open(os.path.join(DA, 'state.json')))['T']; ts = ','.join(f'{T * (k + .5) / 16:.2f}' for k in range(16))
+        q = os.path.join(DA, 'qc_moi'); mau = os.path.join(DA, 'qc_mau'); subprocess.run(['rm', '-rf', q])
+        subprocess.run(['node', os.path.join(vc, 'scripts', 'preview.mjs'), os.path.join(DA, 'build'), os.path.join(DA, 'frames'), '30', 'probe', ts, q], capture_output=True)
+        if not os.path.isdir(mau): shutil.copytree(q, mau); print(f'  · lưu {len(os.listdir(q))} khung làm MỐC ở {mau} — lần sau chạy lại để so')
+        else:
+            for f in sorted(os.listdir(q), key=lambda x: float(x[2:-4])):
+                if not os.path.exists(os.path.join(mau, f)): print(f'  ? {f} không có trong mốc'); continue
+                d = np.abs(np.asarray(Image.open(os.path.join(q, f)).convert('RGB')).astype(int) - np.asarray(Image.open(os.path.join(mau, f)).convert('RGB')).astype(int)).max(2)
+                pc = (d > 40).mean() * 100; ok &= pc < 1; print(f"  {'✓' if pc < 1 else '⚠'} {f[2:-4]} s · khác {pc:.2f}% điểm ảnh")
+    print('✅ KIỂM TRA ĐẠT' if ok else '✖ KIỂM TRA CÓ LỖI — xem dòng ✖/⚠ ở trên'); return ok
+
 if __name__ == '__main__':
     c, *a = sys.argv[1:]
-    {'setup': setup, 'go': go, 'cut': cut, 'build': build, 'out': out, 'wait': wait, 'grid': grid, 'ranh': ranh, 'speakers': speakers, 'xem': xem, 'diadanh': diadanh, 'sb': sb}[c](*a)
+    {'setup': setup, 'go': go, 'cut': cut, 'build': build, 'out': out, 'wait': wait, 'grid': grid, 'ranh': ranh, 'speakers': speakers, 'xem': xem, 'diadanh': diadanh, 'sb': sb, 'kiemtra': kiemtra}[c](*a)
