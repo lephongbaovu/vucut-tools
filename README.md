@@ -7,7 +7,7 @@ Từ 27/11/2026 **toàn bộ mã dựng nằm trong kho này**; skill `vucut` ch
 
 | Đường dẫn | Vai trò |
 |---|---|
-| `vc.py` | Lệnh chính (`setup · go · cut · sb · build · xem · out · wait · grid · ranh · diadanh · speakers · kiemtra`) và các cảnh mẫu `P.*` dùng trong `scenes.py` |
+| `vc.py` | Lệnh chính (`setup · go · cut · sb · build · xem · nhap · out · wait · grid · ranh · diadanh · speakers · kiemtra`) và các cảnh mẫu `P.*` dùng trong `scenes.py` |
 | `mg_real.py` | Bộ đồ hoạ chân thực `R.*` (100 hình, 10 chủ đề) |
 | `engine/scripts/` | Bộ máy: `vucut.py` (phiên âm, cắt, âm thanh, render), `vc_build.py` (lắp cảnh, phụ đề), `preview.mjs` (chụp khung, đã lắp sẵn chuỗi khung bản đồ 3D), `transcribe · autocut · tighten · facetrack · beats · make_sfx · sfx_mix · sfx_thin · matte_split · theme` |
 | `engine/tools/` | `vc_patch.py` (chỉnh vc_build cho kênh: màu phụ đề, tự căn vùng an toàn…), `cine.py` + `cine_sfx.py` (hiệu ứng điện ảnh, âm), `qc_gate.cjs` (cổng kiểm tra trước khi xuất) |
@@ -43,6 +43,6 @@ python3 -X utf8 ~/.vucut/tools/vc.py kiemtra ~/vucut/X  # + dựng lại dự á
 
 ## Nhật ký
 
-- **27/11/2026** — Gộp bộ máy từ skill vào `engine/`; bỏ bộ hình cũ (mg_x, mg_bds, mg_v4, mg_journey, mg_nganh, mg, mg_dl), bản đồ 2D, các kiểu chuyển cảnh cũ (wipe/whip/zoom/flash/glitch, bộ "phong cách" xoay vòng), nhạc tạo 2 lần; thêm `vc.py kiemtra`. Dựng lại video M'Drắk: 31/31 khung giống hệt trước khi dọn.
+- **27/11/2026** — Gộp bộ máy từ skill vào `engine/`; bỏ bộ hình cũ (mg_x, mg_bds, mg_v4, mg_journey, mg_nganh, mg, mg_dl), bản đồ 2D, các kiểu chuyển cảnh cũ (wipe/whip/zoom/flash/glitch, bộ "phong cách" xoay vòng), nhạc tạo 2 lần; thêm `vc.py kiemtra` và `vc.py nhap` (bản nháp 540p). Dựng lại video M'Drắk: 31/31 khung giống hệt trước khi dọn.
 - **27/11/2026** — Viền vàng xước, chuyển cảnh cắt gọn, `P.thu`, bản đồ bay lên (`focus/rise`), nhạc `'tin'` duy nhất.
 - **26/11/2026** — Bản đồ 3D, khung kính, CTA nhũ vàng, nhạc `hung_tin` (đã thay).

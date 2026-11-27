@@ -317,7 +317,7 @@ def _gate_wm():   # cổng không kiểm watermark trôi (lớp chìm) — trán
     y = x.replace("const P = { l: 446, t: 700, r: 626, b: 895 };", "const P = { l: 426, t: 650, r: 626, b: 900 };").replace("r: [446, 700, 626, 895]", "r: [426, 650, 626, 900]")
     if y != x: open(g, 'w', encoding='utf-8').write(y)
 
-def out(DA):
+def out(DA, scale=None):   # scale=0.75 → bản nháp 540p (vc.py nhap DA)
     DA = os.path.abspath(os.path.expanduser(DA))
     for f in ('final_audio_base.m4a', 'final_audio.m4a'):
         if os.path.exists(os.path.join(DA, f)): os.remove(os.path.join(DA, f))
@@ -329,9 +329,10 @@ def out(DA):
     s = open(sp).read() if os.path.exists(sp) else ''
     if s != (open(dn).read() if os.path.exists(dn) else None):
         subprocess.run(['rm', '-rf', os.path.join(DA, 'build', 'cut')]); open(dn, 'w').write(s)
-    subprocess.Popen(f'nohup {PY()} render {DA} > {DA}/render.log 2>&1 &', shell=True)
+    subprocess.Popen(f'nohup {PY()} render {DA}' + (f' --scale {scale}' if scale else '') + f' > {DA}/render.log 2>&1 &', shell=True)
     time.sleep(3); wait(DA)
 
+def nhap(DA): out(DA, 0.75)   # bản nháp 540p: âm + render nhẹ (~9 phút)
 def wait(DA):
     DA = os.path.abspath(os.path.expanduser(DA)); log = os.path.join(DA, 'render.log'); t0 = time.time()
     while time.time() - t0 < 540:
@@ -1273,4 +1274,4 @@ def kiemtra(DA=None):   # vc.py kiemtra [DA] — soát nhanh sau mỗi lần s�
 
 if __name__ == '__main__':
     c, *a = sys.argv[1:]
-    {'setup': setup, 'go': go, 'cut': cut, 'build': build, 'out': out, 'wait': wait, 'grid': grid, 'ranh': ranh, 'speakers': speakers, 'xem': xem, 'diadanh': diadanh, 'sb': sb, 'kiemtra': kiemtra}[c](*a)
+    {'setup': setup, 'go': go, 'cut': cut, 'build': build, 'out': out, 'wait': wait, 'grid': grid, 'ranh': ranh, 'speakers': speakers, 'xem': xem, 'diadanh': diadanh, 'sb': sb, 'kiemtra': kiemtra, 'nhap': nhap}[c](*a)
