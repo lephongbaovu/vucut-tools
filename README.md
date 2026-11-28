@@ -42,6 +42,7 @@ python3 -X utf8 ~/.vucut/tools/vc.py kiemtra ~/vucut/X  # + dựng lại dự á
 Đạt → mới đẩy lên kho.
 
 ## Nhật ký
+- **28/11/2026** — Khung người nói nhỏ: bỏ chữ LE PHONG VU vàng xước + vạch vàng + lớp tối dưới đáy khung (anh Vũ yêu cầu; tên anh chuyển thành chữ khắc chìm trên nền bản đồ thương hiệu, đang duyệt).
 
 - **28/11/2026** — CTA: chừa khoảng dưới nhãn BÌNH LUẬN để dấu chữ nhũ (Ể, Ấ…) không chồng nhãn.
 - **28/11/2026** — `P.sat` routes: `{'line':…, 'lab_at':(lon,lat)}` đặt thẻ tuyến ở điểm chọn (vd ra ngoài ranh giới); `{'line':…, 'gold':True}` nhánh vàng không thẻ (vẽ nút giao có nhánh lên xuống); thẻ tuyến tự giữ trong khung.
