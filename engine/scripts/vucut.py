@@ -203,7 +203,6 @@ def cmd_cut(a):
     print(f'\n✅ Sẵn sàng viết SHOTBOOK. Mốc từng từ: {base_w} (giây của {base_v}).')
     print(f'   Mối nối cần phủ (giây {os.path.basename(os.path.dirname(base_v)) or "gốc"}): {cuts}')
     print('   Đầu build.py:')
-    print(f"     (mẫu đầy đủ: {os.path.join(os.path.expanduser('~'), '.vucut', 'tools', 'build_mau.py')})")
     print(f"     import sys; sys.path.insert(0, r'{SCR}')\n     import vc_build as V, cine as C, vc as P, mg_real as R   (dựng qua vc.py build)")
     print(f"     V.init(T={T}" + (f", tighten=r'{mp}'" if mp else '') + f", face=({face[0]}, {face[1]}), head=r'{ft}', kind='phantich')   # kind: 'tin' | 'phantich' | 'nhandinh' · head = đỉnh đầu (SPLIT tự né)")
     print(f"   Bước tiếp: vucut.py beats {a.da}  → BẢNG NHỊP cho SHOTBOOK")
@@ -238,22 +237,8 @@ def cmd_audio(a):
          'acompressor=threshold=0.1:ratio=2.5:attack=15:release=220,aresample=48000', '-ac', '1', j('voice.wav')])
     run([*PY, os.path.join(SCR, 'sfx_thin.py'), j('cues.json'), j('cues_lite.json')])
     run([*PY, os.path.join(SCR, 'sfx_mix.py'), j('voice.wav'), j('cues_lite.json'), sfx, j('voice_sfx.m4a'), '--sfx-db', '0'])
-    if a.no_music or not os.path.exists(os.path.join(SCR, 'music.py')):   # 27/11/2026: nhạc nền do vc.py (_remix) trộn — bản 'tin' duy nhất
-        loudnorm(j('voice_sfx.m4a'), j('final_audio.m4a'), a.lufs); return
-    plan = json.load(open(j('audio.json'), encoding='utf-8')) if os.path.exists(j('audio.json')) else {}
-    T = dur(v); imp = ','.join(str(x) for x in plan.get('impacts', [])) or '0.05'
-    run([*PY, os.path.join(SCR, 'music.py'), round(T, 3), j('music.wav'), '--impacts', imp])
-    btw = lambda W: '+'.join(f'between(t,{x},{y})' for x, y in W) or '0'
-    Wm, Dk = btw(plan.get('muffle', [])), btw(plan.get('duck', []))
-    fc = (f"[1:a]aresample=48000,volume=-11.5dB,asplit=2[mA][mB];"
-          f"[mA]volume='if({Wm},0,1)':eval=frame[full];"
-          f"[mB]lowpass=f=520,lowpass=f=520,volume=2dB,volume='if({Wm},1,0)':eval=frame[muff];"
-          f"[full][muff]amix=inputs=2:normalize=0,volume='if({Dk},0.03,1)':eval=frame[m];"
-          f"[2:a]pan=stereo|c0=c0|c1=c0[key];[m][key]sidechaincompress=threshold=0.15:ratio=3:attack=80:release=650:knee=6[md];"
-          f"[0:a]aresample=48000,pan=stereo|c0=c0|c1=c0[v];[v][md]amix=inputs=2:normalize=0:duration=first,alimiter=limit=0.95[out]")
-    run(['ffmpeg', '-v', 'error', '-y', '-i', j('voice_sfx.m4a'), '-i', j('music.wav'), '-i', j('voice.wav'),
-         '-filter_complex', fc, '-map', '[out]', '-c:a', 'pcm_s16le', j('mix.wav')])
-    loudnorm(j('mix.wav'), j('final_audio.m4a'), a.lufs)
+    # 27/11/2026: nhạc nền do vc.py (_remix) trộn — bản 'tin' duy nhất; ở đây chỉ chuẩn hoá giọng + SFX
+    loudnorm(j('voice_sfx.m4a'), j('final_audio.m4a'), a.lufs)
 
 
 def loudnorm(src, dst, I=-14.0, TP=-1.5, LRA=11):

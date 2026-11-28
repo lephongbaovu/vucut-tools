@@ -96,17 +96,17 @@ def _nen_bd():   # 1 lớp SVG chung (z 7, sau mọi nền cảnh, trước wate
                    f'<circle class="nbp{n}" cx="{x:.1f}" cy="{y:.1f}" r="10" fill="none" stroke="{GOLD}" stroke-width="1.3"/>'
                    for n, (x, y) in enumerate([pt('buonmathuot'), pt('tuyhoa')]))
     nx, ny = 528, 916   # tên khắc chìm ngay dưới khung người nói (x 434–618, đáy y 888), phải cột phụ đề — vùng không bị che
-    nt = f'<text x="{nx}" y="{ny}" font-family="VBD,serif" font-weight="600" font-size="21" letter-spacing="6" text-anchor="middle">{WM["text"]}</text>'
+    nt = f'<text x="{nx}" y="{ny}" font-family="VWM,serif" font-weight="600" font-size="21" letter-spacing="6" text-anchor="middle">{WM["text"]}</text>'
     name = (f'<g transform="translate(1.2 1.5)" fill="#000" fill-opacity=".75">{nt}</g><g transform="translate(-.6 -.7)" fill="#ffb3a6" fill-opacity=".4">{nt}</g>'
             f'<g fill="#3a0508">{nt}</g><path d="M{nx-96} {ny+13} H{nx+96}" stroke="#000" stroke-opacity=".5" stroke-width="1.2"/>'
             f'<path d="M{nx-96} {ny+12} H{nx+96}" stroke="#ff9a8a" stroke-opacity=".18" stroke-width=".8"/>')
     fade = ('<radialGradient id="nbfd" cx=".78" cy=".46" r=".85"><stop offset="0" stop-color="#fff"/><stop offset=".55" stop-color="#fff" stop-opacity=".6"/>'
             '<stop offset="1" stop-color="#fff" stop-opacity=".22"/></radialGradient><mask id="nbm"><rect width="720" height="1280" fill="url(#nbfd)"/></mask>')
-    fp = os.path.join(T_DIR, 'Cinzel-SemiBold.ttf')
-    if not os.path.exists(fp) or os.path.getsize(fp) < 30000:
+    fp = os.path.join(T_DIR, 'Cinzel-SemiBold.ttf')   # font watermark: _wm_html nhúng VWM; tắt watermark thì tự nhúng
+    if not WM['on'] and (not os.path.exists(fp) or os.path.getsize(fp) < 30000):
         os.makedirs(T_DIR, exist_ok=True); subprocess.run(['curl', '-sL', '-m', '120', '-o', fp, WM_URL])
-    ff = ("<style>@font-face{font-family:VBD;font-weight:600;font-display:block;src:url(data:font/ttf;base64,%s) format('truetype')}</style>"
-          % base64.b64encode(open(fp, 'rb').read()).decode()) if os.path.exists(fp) else ''
+    ff = ("<style>@font-face{font-family:VWM;font-weight:600;font-display:block;src:url(data:font/ttf;base64,%s) format('truetype')}</style>"
+          % base64.b64encode(open(fp, 'rb').read()).decode()) if not WM['on'] and os.path.exists(fp) else ''
     V.H.append(ff + '<svg id="nenbd" width="720" height="1280" viewBox="0 0 720 1280" style="position:absolute;left:0;top:0;z-index:7;opacity:0;pointer-events:none">'
                f'<defs>{fade}</defs><g mask="url(#nbm)"><g id="nbmp">{core}{dots}</g></g>{name}</svg>')
     T = float(V.T)
@@ -776,7 +776,8 @@ PREVIEW_PATCH = ("    window.__timelines.master.seek(t, false);\n  }, [frameFile
 ENGINE = os.path.join(HOME, 'repo', 'engine')   # 27/11/2026: toàn bộ mã dựng nằm trong kho vucut-tools/engine; skill chỉ còn SKILL.md
 def _skill_copy(vc):   # chép skill sang ~/.vucut/skill + vá preview.mjs (lắp chuỗi khung 3D) — skill gốc chỉ đọc
     dst = os.path.join(HOME, 'skill')
-    if os.path.isdir(os.path.join(ENGINE, 'scripts')): vc = ENGINE
+    if not os.path.isdir(os.path.join(ENGINE, 'scripts')): raise SystemExit('✖ thiếu ~/.vucut/repo/engine — chạy lại lệnh Cài (git clone vucut-tools); không dùng mã cũ trong thư mục skill')
+    vc = ENGINE
     if os.path.abspath(vc) != dst: subprocess.run(['rm', '-rf', dst]); shutil.copytree(vc, dst)
     pm = os.path.join(dst, 'scripts', 'preview.mjs'); s = open(pm, encoding='utf-8').read()
     if PREVIEW_PATCH[0] in s: open(pm, 'w', encoding='utf-8').write(s.replace(PREVIEW_PATCH[0], PREVIEW_PATCH[1], 1))

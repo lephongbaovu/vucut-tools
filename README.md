@@ -42,6 +42,7 @@ python3 -X utf8 ~/.vucut/tools/vc.py kiemtra ~/vucut/X  # + dựng lại dự á
 Đạt → mới đẩy lên kho.
 
 ## Nhật ký
+- **28/11/2026** — Dọn mã chết: bỏ `V.panel`/`V.g1` (gọi mg, mg_v4 đã gỡ) và lớp bọc `_panel` trong vc_patch, import mg_bds/mg_x, nhánh nhạc `music.py` (không còn file) + dòng nhắc `build_mau.py` trong vucut.py; nền thương hiệu dùng chung font watermark (không nhúng Cinzel 2 lần); `setup` báo lỗi rõ nếu thiếu `engine/` thay vì lặng lẽ chạy mã cũ trong thư mục skill.
 - **28/11/2026** — NỀN THƯƠNG HIỆU mặc định cho mọi cảnh đồ hoạ: lớp `#nenbd` (vc.py `_nen_bd`) — bản đồ Đắk Lắk dập chìm trên nền đỏ trầm, vệt vàng chạy quanh ranh giới tỉnh, chấm vàng lan sóng ở Buôn Ma Thuột + Tuy Hòa, phóng chậm; tên LE PHONG VU khắc chìm (Cinzel) ngay dưới khung người nói. Bật đúng các khoảng cảnh đồ hoạ (`mg_real.NBD`, cả `P.cta`); `P.nen(khác 'do')` hoặc `P.nenbd(False)` tắt. Hình thỏi vàng: bỏ đốm vàng lem, vệt sáng nhoè, sàn loang.
 - **28/11/2026** — Khung người nói nhỏ: bỏ chữ LE PHONG VU vàng xước + vạch vàng + lớp tối dưới đáy khung (anh Vũ yêu cầu; tên anh chuyển thành chữ khắc chìm trên nền bản đồ thương hiệu, đang duyệt).
 

@@ -13,7 +13,7 @@ Bộ âm (tên file = tên dùng trong cues.json của sfx_mix.py):
   ding     0.70 s  chuông sáng       — số liệu chốt, ý đúng
   count    0.50 s  tích tắc dồn      — số đếm lên
   sub      0.60 s  sub-drop          — câu chốt cuối
-  --- v9 · âm THEO CHỦ ĐỀ BĐS (mg_bds tự gắn; vật thật → tiếng thật, người xem "nghe" ra vật) ---
+  --- v9 · âm THEO CHỦ ĐỀ BĐS (mg_real tự gắn; vật thật → tiếng thật, người xem "nghe" ra vật) ---
   paper    0.40 s  lật giấy          — sổ mở, thẻ lật, hồ sơ
   stamp    0.45 s  dấu đóng          — con dấu, kết luận pháp lý
   flap     0.70 s  bảng lật số       — bảng giá

@@ -41,21 +41,8 @@ CSS = ('<style>:root{--vc-grad:linear-gradient(180deg,#FFFFFF 0%,#FFFFFF 30%,#F6
        'filter:blur(0px) drop-shadow(0px 2px 6px rgba(0,0,0,.5)) drop-shadow(0px 0px 18px rgba(0,0,0,.25))}'
        '.mix.on-red .s.gold,.mix.on-red .s.green,.mix.on-green .s.gold,.mix.on-green .s:not(.gold):not(.green){filter:blur(0px) drop-shadow(0px 2px 5px rgba(0,0,0,.7)) drop-shadow(0px 0px 12px rgba(0,0,0,.35))}'
        '.mix.on-gold .s:not(.gold),.mix.on-gold .s.green{filter:blur(0px) drop-shadow(0px 2px 5px rgba(0,0,0,.75)) drop-shadow(0px 0px 10px rgba(0,0,0,.45))}</style>')
-V.PANEL_KINDS = tuple(V.PANEL_KINDS) + ('greenpanel', 'redglow', 'greenglow', 'goldglow')
-LUX = []                                                   # (a, b, kind) nền màu gradient → chữ tự on-*
+LUX = []   # (a, b, kind) nền màu gradient → chữ tự on-* (V.panel đã gỡ 28/11/2026 → luôn rỗng, giữ cho _finish)
 _ON = {'redpanel': 'on-red', 'greenpanel': 'on-green', 'goldpanel': 'on-gold'}
-_panel0 = V.panel
-def _panel(pid, kind, a, b, light=None, seed=0, extra_ids=(), half=False):
-    _panel0(pid, kind, a, b, light, seed, extra_ids, half)
-    if kind not in _ON: return
-    LUX.append((a, b, kind)); tag = f'id="{pid}"></div>'
-    for k in range(len(V.H) - 1, -1, -1):
-        if tag in V.H[k]: V.H[k] = V.H[k].replace(tag, f'id="{pid}"><i class="lx-key"></i><i class="lx-sheen"></i></div>'); break
-    d = b - a; sw = min(2.6, max(1.2, d * .7))
-    V.J.append(f"tl.fromTo('#{pid} .lx-key',{{x:-30,y:-20,scale:1}},{{x:70,y:40,scale:1.12,duration:{d:.2f},ease:'sine.inOut'}},{a:.3f});"
-               f"tl.fromTo('#{pid} .lx-sheen',{{x:0,opacity:0}},{{x:1150,duration:{sw:.2f},ease:'power2.inOut'}},{a + .12:.3f});"
-               f"tl.to('#{pid} .lx-sheen',{{opacity:.85,duration:{sw * .3:.2f},yoyo:true,repeat:1,ease:'sine.inOut'}},{a + .12 + sw * .2:.3f});")
-V.panel = _panel
 V.disclaimer = lambda *a, **k: print('(bỏ qua V.disclaimer — kênh không dùng dòng miễn trừ)')
 
 _fin0 = V.finish

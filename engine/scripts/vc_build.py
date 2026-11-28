@@ -1,10 +1,6 @@
 """vucut · vc_build.py — bộ hàm dựng master.html từ SHOTBOOK (Python), dùng với mẫu vucut_9x16_v4.html.
 Mốc viết theo giây của cut/cut.mp4; nếu đã chạy tighten.py thì truyền map.json → shell tự dời mốc (TM) và cue tự dời (M).
-    import vc_build as V, mg, mg_v4
-    V.init(T=73.25, tighten='cut2/map.json')
-    V.L_person(0, 1.6); V.mix('m1', [('w','nông sản',.1),'br',('xl','thế giới',1.7)], 760)
-    V.panel('p1','darkpanel',2.3,5.1,False,1,['g1','m2'],half=True); V.L_split(2.3,5.1)
-    V.g1('g1',2.3,5.1,False,mg_v4.grid3,3.0,3.5, box=V.BOX_SPLIT)
+    (dựng qua vc.py build: scenes.py dùng V P C R — xem SKILL.md)
     V.finish('build/master.html', 'cues.json', shell='$VC/assets/template/vucut_9x16_v4.html')"""
 import json, re
 from collections import Counter
@@ -15,9 +11,6 @@ AUD = {}
 USED, PANELS, GW = [], [], []   # GW: (a, b, đáy y, tên) cửa sổ đồ hoạ → phụ đề tự né
 USED_, PANELS_ = None, None   # (t, tên hình) · (t, loại nền) — để chấm ĐA DẠNG
 THREAD = {'dlmap', 'journey'}   # hình SỢI CHỈ — được quay lại (callback) mà không tính là lặp
-try:
-    import mg_bds as _B; THREAD |= _B.THREADS
-except ImportError: _B = None
 import theme as TH, os, time
 THEME = {'name': 'docdo'}
 HEAD, SPLITS, SPLIT_RANGES, PIPS = {}, [], [], []   # PIPS: cảnh đồ hoạ có KHUNG NGƯỜI NÓI NHỎ (L_full / L_card)
@@ -41,12 +34,7 @@ def _hist():
     try: return json.load(open(HIST, encoding='utf-8'))
     except Exception: return []
 
-def _catalog():
-    try: from mg_x import FAMILY as F   # bộ hình cũ đã gỡ 27/11/2026 → danh mục rỗng
-    except ImportError: return {}
-    F = dict(F)
-    if _B: F.update(_B.FAMILY)
-    return F
+def _catalog(): return {}   # bộ hình cũ (mg_x, mg_bds) đã gỡ 27/11/2026 — mg_real không chia họ
 LIGHT_PANELS = {'dotpanel', 'gridpanel', 'paperpanel', 'diachinh'}
 PANEL_KINDS = ('darkpanel', 'dotpanel', 'redpanel', 'gridpanel', 'inkpanel', 'paperpanel', 'blueprint', 'diagpanel', 'goldpanel', 'diachinh', 'betong', 'diahinh')
 BOX_STD = 'left:110px;top:180px;width:500px;height:375px'      # hộp đồ hoạ khi panel toàn khung / thẻ người nói
@@ -142,21 +130,9 @@ def pip_apply():
             H[k] = _to_left(h); moved.append(m.group(2))
     print(f'KHUNG NGƯỜI NÓI NHỎ: {len(W)} lần · ' + ', '.join(f'{a}–{b}' for a, b in W) + (f' · chữ sang cột trái: {", ".join(moved)}' if moved else ''))
 
-def panel(pid, kind, a, b, light=None, seed=0, extra_ids=(), half=False):
-    """kind: darkpanel · dotpanel · redpanel · gridpanel · inkpanel · paperpanel · blueprint · diagpanel · goldpanel (light tự suy nếu bỏ trống)"""
-    import mg
-    if kind not in PANEL_KINDS: raise ValueError(f'panel {kind!r} không có; chọn: {PANEL_KINDS}')
-    if light is None: light = kind in LIGHT_PANELS
-    PANELS.append((a, kind))
-    H.append(f'<div class="{kind}{" half" if half else ""}" id="{pid}"></div>')
-    dh, dj = mg.panel_fx(pid, pid + 'd', a, b, light, seed)
-    if half: dh = dh.replace('class="vc dust', 'style="bottom:680px" class="vc dust')
-    H.append(dh); J.append(f"VC.panel('#{pid}',{a}); VC.reset({a});"); J.extend(dj)
-    ids = [pid, pid + 'd', *extra_ids]
-    J.append(f"[{','.join(repr('#' + x) for x in ids)}].forEach(function(s){{VC.cut(s,{b});}});")
 
 def full(res, b=None, extra=()):
-    """đồ hoạ toàn khung của mg_v4 / mg_journey (map/newscard/giant/chapter/compare/kinetic/journey/climax) — tự ẩn ở b của nó"""
+    """đồ hoạ toàn khung (mg_real qua P.hinh / V.full) — tự ẩn ở b của nó"""
     html, js, cues = res; H.append(html); J.extend(js); _used(html, js); _gw(html, js)
     for t, s, *_ in cues: cue(t, s)
     for x in extra: J.append(f"VC.cut('#{x}',{b});")
@@ -168,14 +144,6 @@ def graphic(res, box=BOX_STD, b=None):
         import re; J.append(f"VC.cut('#{re.search(r'id="([^"]+)"', html).group(1)}',{b});")
     for t, s, db in cues: cue(t, s)
 
-def g1(i, a, b, light, fn, *args, box=BOX_STD, style=''):
-    """hình hộp 400×300 tự viết: fn(i,a,b,*args) → (svg, js, cues[(t,s[,db])])"""
-    import mg_v4
-    s, j, c = fn(i, a, b, *args)
-    html, js = mg_v4.wrap(i, a, s, j, light, style)
-    H.append(fixbox(html, box)); J.extend(js); J.append(f"VC.cut('#{i}',{b});")   # tự ẩn ở b
-    USED.append((a, fn.__name__)); _gw(html, js, box, b, a)
-    for x in c: cue(x[0], x[1])
 
 def _bottom(html):
     """đáy (y lớn nhất) của phần hình THẬT trong SVG toàn khung 720×1280 — bỏ nền phủ cả khung"""
