@@ -43,6 +43,7 @@ python3 -X utf8 ~/.vucut/tools/vc.py kiemtra ~/vucut/X  # + dựng lại dự á
 
 ## Nhật ký
 
+- **28/11/2026** — CTA: chừa khoảng dưới nhãn BÌNH LUẬN để dấu chữ nhũ (Ể, Ấ…) không chồng nhãn.
 - **28/11/2026** — `P.sat` routes: `{'line':…, 'lab_at':(lon,lat)}` đặt thẻ tuyến ở điểm chọn (vd ra ngoài ranh giới); `{'line':…, 'gold':True}` nhánh vàng không thẻ (vẽ nút giao có nhánh lên xuống); thẻ tuyến tự giữ trong khung.
 - **28/11/2026** — `cautruc` + `vungloi` vẽ lại quy mô lớn (anh yêu cầu hoành tráng hơn): mặt bằng gần kín khung, hạt nhân 9 cao ốc + cột sáng, mỗi cực 6 toà, khu thấp tầng quanh lõi, ruộng – cây – xe chạy trên quốc lộ; mỗi khu đô thị mới có cụm cao ốc + nhà phố; tổng diện tích lên góc phải trên.
 - **28/11/2026** — `cautruc`: nhãn nút đặt theo `CT_LAB` (không chồng nhau, không đè trục), bỏ mũi tên nam; thêm `dachucnang` (bệ trung tâm toả tới các khối chức năng) thay bảng liệt kê khi anh muốn đồ hoạ.

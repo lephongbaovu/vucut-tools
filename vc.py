@@ -1055,7 +1055,7 @@ def cta(a, b, follow, hoi=None, chu=(), ten=CTA_TEN, chuc=CTA_CHUC, nut='Follow'
     if hoi is not None:
         H.append(f'<div class="pa" style="position:absolute;left:60px;top:150px;width:600px">'
                  f'<div class="k" style="display:flex;align-items:center;gap:12px;font-family:VCB,sans-serif;font-weight:800;font-size:19px;letter-spacing:4px;color:#E8C27A">'
-                 f'<span style="width:28px;height:3px;background:#E8C27A;display:inline-block"></span>BÌNH LUẬN</div>'
+                 f'<span style="width:28px;height:3px;background:#E8C27A;display:inline-block"></span>BÌNH LUẬN</div><div style="height:34px"></div>'   # anh 28/11: chừa chỗ dấu chữ nhũ, không chồng nhãn BÌNH LUẬN
                  + ''.join(f'<div class="h{k}" style="font-family:VCS,serif;font-weight:700;font-size:{(min(82, int(560 / (len(x) * .6))) if len(x) > 9 else 82) if k else 64}px;white-space:nowrap;line-height:1.08;letter-spacing:.01em;margin-top:{14 if not k else 0}px;{FOIL}">{x}</div>' for k, x in enumerate(hoi_txt))
                  + '</div>'
                  f'<div class="bu" style="position:absolute;left:70px;top:430px;width:300px;height:170px;transform:scale(1.25);transform-origin:0 0">'
