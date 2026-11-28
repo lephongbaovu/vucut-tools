@@ -584,7 +584,8 @@ def map_ranh(i, a, b, names=(), t_draw=None, label='', sub='', km2=False, routes
     RT = [(lb, _road(w), (t if t is not None else t_draw + .3 + .4 * n)) for n, (lb, w, *t_) in enumerate(routes) for t in [t_[0] if t_ else None]]
     PN = [(lb, _pt(p), (t_[0] if t_ else t_draw + .5 + .3 * n)) for n, (lb, p, *t_) in enumerate(pins)]
     if km2 and len(ks) == 1 and D[ks[0]].get('km2'): sub = sub or f"{D[ks[0]]['km2']:g} km²"
-    return _sat3d(i, a, b, D, ks, t_draw, label, sub, RT, PN, center, km, [(lb, _pt(p)) for lb, p in areas], [_pick(D, x) for x in ([border] if isinstance(border, str) else border)],
+    RTO = [({'lp': list(_pt(w['lab_at'])) if w.get('lab_at') else None, 'gold': bool(w.get('gold'))} if isinstance(w, dict) else {'lp': None, 'gold': False}) for _, w, *_ in routes]   # lab_at=(lon,lat) chỗ đặt thẻ · gold=nhánh nút giao vàng, không thẻ
+    return _sat3d(i, a, b, D, ks, t_draw, label, sub, RT, PN, center, km, [(lb, _pt(p)) for lb, p in areas], [_pick(D, x) for x in ([border] if isinstance(border, str) else border)], RTO=RTO,
                           FK=_pick(D, focus) if focus else None, TF=t_focus, RISE=rise, FSUB=focus_sub)
 
 # ---------- BẢN ĐỒ VỆ TINH 3D (P.sat(..., d3=True)) — anh duyệt mẫu Liên Sơn Lắk 26/11/2026 · 28/11: vùng to hơn (khung vừa 640×520, trước 570×470) ----------
@@ -639,7 +640,7 @@ const FL=[];for(const R of (D.frings||[])){const pts=[];for(let n=0;n<=R.length;
  FL.push({pts,n:pts.length/3-1,glow:mk(14,0xC9A25A,.35),core:mk(4.5,0xF6E2A2,1),hot:mk(7,0xFFF1C2,.85)})}
 const RTS=[];for(const Q of (D.routes||[])){const pts=[];for(const[a,b]of Q.pts)pts.push((a-.5)*S,hAt(a,b)+S*.0018,(b-.5)*S);
  const mk=(w,col,op)=>{const lg=new LineGeometry();lg.setPositions(pts);const lm=new LineMaterial({color:col,linewidth:w,transparent:true,opacity:op,depthTest:false});lm.resolution.set(W,H);const l=new Line2(lg,lm);l.renderOrder=6;sc.add(l);return l};
- const n=pts.length/3-1,NR=(D.routes||[]).length,fr=NR>1?.58-.16*RTS.length/(NR-1):.5,m=Q.pts[Math.min(Q.pts.length-1,Math.floor(Q.pts.length*fr))];RTS.push({n,td:Q.td,glow:mk(18,0xFF1A1A,.6),core:mk(5.5,0xFF5A4A,1),hot:mk(1.6,0xFFE0D8,.95),mid:new THREE.Vector3((m[0]-.5)*S,hAt(m[0],m[1]),(m[1]-.5)*S),el:Q.lab?chip(Q.lab,'#FF7A6B'):null})}
+ const n=pts.length/3-1,NR=(D.routes||[]).length,fr=NR>1?.58-.16*RTS.length/(NR-1):.5,m=Q.lp||Q.pts[Math.min(Q.pts.length-1,Math.floor(Q.pts.length*fr))];RTS.push({n,td:Q.td,glow:Q.gold?mk(14,0xC9A25A,.55):mk(18,0xFF1A1A,.6),core:Q.gold?mk(4,0xFFE7A0,1):mk(5.5,0xFF5A4A,1),hot:Q.gold?mk(1.4,0xFFFFFF,.9):mk(1.6,0xFFE0D8,.95),mid:new THREE.Vector3((m[0]-.5)*S,hAt(m[0],m[1]),(m[1]-.5)*S),el:Q.lab?chip(Q.lab,'#FF7A6B'):null})}
 for(const B of (D.borders||[])){const pts=[];for(const[u,v]of B)pts.push((u-.5)*S,hAt(u,v)+S*.0012,(v-.5)*S);const lg=new LineGeometry();lg.setPositions(pts);
  const lm=new LineMaterial({color:0xffffff,linewidth:2.2,transparent:true,opacity:.75,depthTest:false,dashed:true,dashSize:S*.006,gapSize:S*.004});lm.resolution.set(W,H);const l=new Line2(lg,lm);l.computeLineDistances();l.renderOrder=4;sc.add(l)}
 const ARS=[];for(const Q of (D.areas||[])){const[u,v]=Q.p;const e=document.createElement('div');e.className='foil';e.style.cssText='position:absolute;left:0;top:0;opacity:0;white-space:nowrap;font-size:30px;letter-spacing:2px';
@@ -647,7 +648,7 @@ const ARS=[];for(const Q of (D.areas||[])){const[u,v]=Q.p;const e=document.creat
 const PNS=[];for(const Q of (D.pins||[])){const[a,b]=Q.p;PNS.push({td:Q.td,v:new THREE.Vector3((a-.5)*S,hAt(a,b),(b-.5)*S),el:chip(Q.lab||'','#F2CC74',true)})}
 function chip(t,col,dot){const e=document.createElement('div');e.style.cssText='position:absolute;left:0;top:0;opacity:0;white-space:nowrap;text-align:center';
  e.innerHTML=dot?`<div style="display:flex;align-items:center;gap:8px"><div style="flex:none;width:18px;height:18px;border-radius:50%;background:#F2CC74;border:3px solid #fff;box-shadow:0 0 14px #F2CC74"></div>${t?`<div style="padding:6px 14px;border-radius:8px;background:rgba(8,20,14,.72);border:2px solid ${col};color:${col};font:800 19px LPV,sans-serif;letter-spacing:.5px">${t}</div>`:''}</div>`:(t?`<div style="display:inline-block;padding:6px 14px;border-radius:8px;background:rgba(8,20,14,.72);border:2px solid ${col};color:${col};font:800 19px LPV,sans-serif;letter-spacing:.5px">${t}</div>`:'');document.body.appendChild(e);return e}
-function place(e,v,op,dot){const p=v.clone().project(cam);const x=Math.min(600,Math.max(110,(p.x+1)/2*W)),y=Math.min(640,Math.max(220,(1-p.y)/2*H));e.style.opacity=op;e.style.transform=dot?`translate(${x}px,${y}px) translate(-12px,-50%)`:`translate(${x}px,${y}px) translate(-50%,-130%)`}
+function place(e,v,op,dot){const p=v.clone().project(cam);const hw=dot?12:Math.max(100,e.offsetWidth/2);const x=Math.min(dot?600:706-hw,Math.max(dot?110:hw+14,(p.x+1)/2*W)),y=Math.min(640,Math.max(220,(1-p.y)/2*H));e.style.opacity=op;e.style.transform=dot?`translate(${x}px,${y}px) translate(-12px,-50%)`:`translate(${x}px,${y}px) translate(-50%,-130%)`}
 const ctr=new THREE.Vector3((D.ctr[0]-.5)*S,hAt(D.ctr[0],D.ctr[1]),(D.ctr[1]-.5)*S);const lab=document.getElementById('lab');
 const E=x=>x<0?0:x>1?1:x*x*(3-2*x),io=x=>x<0?0:x>1?1:1-Math.pow(1-x,3);const TD=D.td,TZ=Math.max(1.,Math.min(2.2,TD+.4));
 // anh 26/11: bản đồ hiện HẾT vùng/tuyến trong khung đồ hoạ (x 60–600, y 200–620), né khung tivi góc phải dưới
@@ -755,7 +756,7 @@ def _elev(z, x0, y0, x1, y1):   # độ cao AWS Terrain (terrarium) → mảng m
         try: a = np.asarray(Image.open(f).convert('RGB')).astype(float); A[(y - ty[0]) * 256:(y - ty[0] + 1) * 256, (x - tx[0]) * 256:(x - tx[0] + 1) * 256] = a[..., 0] * 256 + a[..., 1] + a[..., 2] / 256 - 32768
         except Exception: pass
     return A[int(y0 - ty[0] * 256):int(y1 - ty[0] * 256), int(x0 - tx[0] * 256):int(x1 - tx[0] * 256)]
-def _sat3d(i, a, b, D, ks, t_draw, label, sub, RT=(), PN=(), center=None, km=6, AR=(), BK=(), FK=None, TF=None, RISE=None, FSUB=''):   # FK: xã mở đầu cận cảnh, TF giây vẽ viền xã, RISE=(t0,t1) camera bay lên toàn cảnh rồi vẽ viền chính ở t_draw (anh 27/11)
+def _sat3d(i, a, b, D, ks, t_draw, label, sub, RT=(), PN=(), center=None, km=6, AR=(), BK=(), FK=None, TF=None, RISE=None, FSUB='', RTO=()):   # FK: xã mở đầu cận cảnh, TF giây vẽ viền xã, RISE=(t0,t1) camera bay lên toàn cảnh rồi vẽ viền chính ở t_draw (anh 27/11)
     import numpy as np, hashlib; from PIL import Image, ImageDraw, ImageFilter
     Image.MAX_IMAGE_PIXELS = None
     R = [r for k in ks for r in D[k]['r']]; P = [p for r in R for p in r] + [p for _, ln, _ in RT for p in ln] + [p for _, p, _ in PN]
@@ -767,7 +768,7 @@ def _sat3d(i, a, b, D, ks, t_draw, label, sub, RT=(), PN=(), center=None, km=6, 
     if ks: name = label or (('TỈNH ' if ks[0] == '__tinh' else '') + D[ks[0]]['ten'].upper() if one else ' · '.join(D[k]['ten'].upper() for k in ks))
     else: name, sub = (label or sub or ''), ''
     dur = b - a; td = t_draw - a; N = int(math.ceil(dur * 30)) + 1
-    key = hashlib.md5(json.dumps([ks, round(dur, 2), round(td, 2), name, kick, sub, [(lb, ln, round(t - a, 2)) for lb, ln, t in RT], [(lb, p, round(t - a, 2)) for lb, p, t in PN], AR, BK, 'v11' + MAU['k'] + json.dumps(PAL[MAU['k']], sort_keys=True), FK, TF and round(TF - a, 2), RISE and [round(x - a, 2) for x in RISE], FSUB]).encode()).hexdigest()[:10]
+    key = hashlib.md5(json.dumps([ks, round(dur, 2), round(td, 2), name, kick, sub, [(lb, ln, round(t - a, 2)) for lb, ln, t in RT], [(lb, p, round(t - a, 2)) for lb, p, t in PN], AR, BK, list(RTO), 'v12' + MAU['k'] + json.dumps(PAL[MAU['k']], sort_keys=True), FK, TF and round(TF - a, 2), RISE and [round(x - a, 2) for x in RISE], FSUB]).encode()).hexdigest()[:10]
     root = DA_ or HOME; jd = os.path.join(root, 's3d', key)
     if not os.path.exists(os.path.join(jd, 'done')):
         os.makedirs(jd, exist_ok=True); print(f'  · dựng bản đồ 3D {name} ({N} khung, ~{N * .45:.0f} s)…')
@@ -798,7 +799,8 @@ def _sat3d(i, a, b, D, ks, t_draw, label, sub, RT=(), PN=(), center=None, km=6, 
             for r in D[FK]['r']: dr2.polygon([(u * 4096, v * 4096) for u, v in (tp(*p) for p in r)], fill=255)
             m2.filter(ImageFilter.GaussianBlur(4)).save(os.path.join(jd, 'mask2.png'))
         rings = [[tp(*p) for p in r] for r in R if len(r) > 8]
-        rts = [{'pts': [tp(*p) for p in ln], 'td': t - a, 'lab': lb} for lb, ln, t in RT]
+        RTO_ = list(RTO) + [{}] * (len(RT) - len(RTO))
+        rts = [{'pts': [tp(*p) for p in ln], 'td': t - a, 'lab': lb, 'lp': (list(tp(*o['lp'])) if o.get('lp') else None), 'gold': o.get('gold', False)} for (lb, ln, t), o in zip(RT, RTO_)]
         ars = [{'p': tp(*p), 'lab': lb} for lb, p in AR]
         bds = []   # ranh giới tỉnh mảnh (bối cảnh), chỉ phần nằm trong mặt bản đồ
         for k in BK:
@@ -836,7 +838,8 @@ def _sat3d(i, a, b, D, ks, t_draw, label, sub, RT=(), PN=(), center=None, km=6, 
         import cine; os.makedirs(os.path.join(DA_, 'sfx'), exist_ok=True); _sfx_ranh(os.path.join(DA_, 'sfx', 'ranh.wav'), 1.0)
         if ks: cine.sfx(t_draw - .05, 'ranh')
         if FK: cine.sfx(TF - .05, 'ranh')
-        for _, _, t in RT: cine.sfx(t - .05, 'ranh')
+        for (_, _, t), o in zip(RT, list(RTO) + [{}] * len(RT)):
+            if not o.get('gold'): cine.sfx(t - .05, 'ranh')
     return html, js, [(a, 'whoosh')] + [(t, 'pop') for _, _, t in PN]
 
 # ---------- STORYBOARD trước khi dựng (anh yêu cầu 26/11/2026, giống realcut) ----------
