@@ -14,7 +14,7 @@ LOGISTICS   cangcan · mangluoi · chiphi · khobai(t0,value,unit) · vantai(t0,
 CÔNG NGHIỆP nhamay · lapday · vieclam · khucn(t0,value,unit,tag) · tuabingio(t0,value,unit) · robot(t0,tag) · vatlieu(t0,items) · xuongthue(t0,value,unit) · datacenter(t0,tag) · xulynuoc(t0,tag)
 TM – DỊCH VỤ banle · cuakhau · tmdt · dulich · luutru · tienich · tttm(t0,tag) · khachsan(t0,value,unit,tag) · benhvien(t0,value,unit,tag) · truonghoc(t0,value,unit,tag)
 BỔ SUNG 26/11 vuonsr(t0,value,unit) vườn sầu riêng · vonoda(t0,src,target) vốn ODA đổ vào đường · logistics(t0,t1,left,right,up) giá trị nông sản ↔ nút thắt logistics
-BỔ SUNG 28/11 quymo(items=[(kind,value,unit,label,t)]) màn hình quy mô · dansotang(steps=[(năm,số,t)×2]) dân số tăng · cautruc(t0,nodes,axes,t_link,focus,value,chips) sơ đồ 1 hạt nhân – các cực · vungloi(area,n,t_n,total) vùng lõi + n khu ĐTM
+BỔ SUNG 28/11 quymo(items=[(kind,value,unit,label,t)]) màn hình quy mô · dansotang(steps=[(năm,số,t)×2]) dân số tăng · cautruc(t0,nodes,axes,t_link,focus,value,chips) sơ đồ 1 hạt nhân – các cực · vungloi(area,n,t_n,total) vùng lõi + n khu ĐTM · dachucnang(items=[(kind,NHÃN,t)],center) bệ trung tâm toả tới các khối chức năng
 (đã bỏ chiso — màn hình tivi)
 Mọi số/chữ chỉ hiện khi truyền vào (lấy từ lời); value có → số lớn đếm + tiếng máy đếm tự gắn."""
 import math, random, re, json
@@ -3101,7 +3101,8 @@ def dansotang(i, a, b, steps, unit='người', kicker='DÂN SỐ', title='Dân s
     return _out(i, a, b, 'r_dansotang', s, j), j, [(t1, 'tick'), (t2 - .6, 'riser'), (t2, 'tick')]
 
 
-CT_POS = {'tay': (1.6, 7.3), 'hd': (2.4, 2.0), 'loi': (5.9, 5.0), 'dong': (8.8, 4.2)}   # sơ đồ: tây → đông theo trục quốc lộ (y≈5)
+CT_POS = {'tay': (0.8, 9.0), 'hd': (6.5, 0.8), 'loi': (5.9, 5.0), 'dong': (9.2, 6.0)}
+CT_LAB = {'loi': (0, -112), 'tay': (-55, -70), 'hd': (0, -74), 'dong': (34, 76)}   # nhãn nút: lệch màn hình (px ở sc 29) — không chồng nhau, không đè trục   # sơ đồ: tây → đông theo trục quốc lộ (y≈5)
 def cautruc(i, a, b, t0, nodes, axes=(), t_link=None, focus=None, value='', unit='ha', t_val=None, chips=(), kicker='CẤU TRÚC ĐÔ THỊ', title='', source=''):
     """SƠ ĐỒ 1 HẠT NHÂN – CÁC CỰC trên mặt bằng 3D: bệ hạt nhân vàng có cụm toà nhà ở giữa, các cực xanh lá nối bằng tia sáng, trục đường xuyên qua.
     nodes=[(vị trí 'loi'|'tay'|'hd'|'dong', NHÃN, t)] · axes=[(NHÃN TRỤC, t)] (trục 1 ngang, trục 2 rẽ nam từ hạt nhân) · t_link = giây hiện mũi tên LIÊN KẾT VÙNG
@@ -3121,7 +3122,7 @@ def cautruc(i, a, b, t0, nodes, axes=(), t_link=None, focus=None, value='', unit
     if len(axes) > 1: s += _qroady(I, 5.4, 10, 5.9, .42, 'ax1')
     AX = [I(.2, 5.9, .1), I(5.0, 9.6, .1)]
     for k, (lab, t) in enumerate(axes[:2]):
-        x, y = (I(7.0, 5.0, .1) if k == 0 else I(5.9, 9.6, .1)); s += _qpill(x + (-20 if k == 0 else 92), y + (44 if k == 0 else 10), lab, 'hsl(145,55%,40%)', '#04140a', f'al{k}', 17)
+        x, y = (I(1.5, 5.0, .1) if k == 0 else I(7.9, 9.6, .1)); s += _qpill(x, y - (6 if k == 0 else 0), lab, 'hsl(145,55%,40%)', '#04140a', f'al{k}', 17)
     COL = {'loi': (GOLD, 'hsl(40,80%,40%)'), 'tay': (GRN, 'hsl(145,50%,30%)'), 'hd': (GRN, 'hsl(145,50%,30%)'), 'dong': (GRN, 'hsl(145,50%,30%)')}
     C = I(*CT_POS['loi'], .3); links = ''
     for k, (pos, lab, t) in enumerate(nodes):
@@ -3131,9 +3132,9 @@ def cautruc(i, a, b, t0, nodes, axes=(), t_link=None, focus=None, value='', unit
                   f'<path class="ll{k}" d="M{C[0]:.0f} {C[1]:.0f} L{P[0]:.0f} {P[1]:.0f}" stroke="hsl(150,95%,75%)" stroke-width="2.5" stroke-dasharray="8 7"/></g>')
     s += links
     if t_link is not None:
-        for q, (x0, y0, x1, y1) in enumerate([(.9, 5, -1.6, 5), (9.1, 5, 11.6, 5), (5.9, 9.0, 5.9, 11.6)]):
+        for q, (x0, y0, x1, y1) in enumerate([(.9, 5, -1.6, 5), (9.1, 5, 11.6, 5)]):
             p0, p1 = I(x0, y0, .2), I(x1, y1, .2); s += _qarrow(*p0, *p1, GOLD, 6, f'lv{q}')
-        px, py = I(10.4, 5.6, 0); s += _qpill(min(480, px - 60), py + 30, 'LIÊN KẾT VÙNG', GOLD, '#111', 'lvp', 17)
+        s += _qpill(170, Y0 + 10 * sc + 4, 'LIÊN KẾT VÙNG', GOLD, '#111', 'lvp', 17)
     jn = []
     for k, (pos, lab, t) in enumerate(nodes):
         x, y = CT_POS[pos]; c0, c1 = COL[pos]; R = 1.25 if pos == 'loi' else .9
@@ -3147,8 +3148,8 @@ def cautruc(i, a, b, t0, nodes, axes=(), t_link=None, focus=None, value='', unit
             for q, (dx, dy, hh) in enumerate([(-.3, -.2, 1.2), (.2, -.3, 1.7), (0, .25, .9)]):
                 g += _tower(I, i, x + dx - .2, y + dy - .2, .4, .4, hh, '', 1, int(hh * 2) + 1, 160)
         g += '</g>'; s += g
-        lx, ly = I(x, y, 4.2 if pos == 'loi' else 2.8)
-        s += _qpill(max(110, min(600, lx)), ly - 8, lab, c0, '#111', f'np{k}', 17 if FOC and pos != focus else 19)
+        lx, ly = I(x, y, 0); ox, oy = CT_LAB[pos]; lx, ly = lx + ox * sc / 29, ly + oy * sc / 29
+        s += _qpill(max(150, min(590, lx)), ly, lab, c0, '#111', f'np{k}', 17 if FOC and pos != focus else 19)
         if FOC:
             if pos == focus:
                 j0 = [_qpop(i, f'nd{k}', a + .05, .45, '50% 80%', 'back.out(1.8)'), _qpop(i, f'np{k}', a + .2, .4, '50% 50%'),
@@ -3163,7 +3164,7 @@ def cautruc(i, a, b, t0, nodes, axes=(), t_link=None, focus=None, value='', unit
     if FOC: j += [S(f'#{i} .lk{k}', 0, opacity=.35) for k in range(len(nodes))] + ([_qfade(i, 'ax1', a + .2)] if len(axes) > 1 else []) + [S(f'#{i} .al{k}', 0, opacity=0) for k in range(len(axes))]
     else:
         j += [_qpop(i, f'al{k}', t, .4, '50% 50%') for k, (_, t) in enumerate(axes[:2])] + ([_qfade(i, 'ax1', axes[1][1] - .2)] if len(axes) > 1 else [])
-    if t_link is not None: j += [S(f'#{i} .lv{q}', 0, opacity=0, scale=.4, transformOrigin='50% 50%') + T(f'#{i} .lv{q}', t_link + q * .08, opacity=1, scale=1, duration=.45, ease='back.out(2)') for q in range(3)] + [_qpop(i, 'lvp', t_link + .25, .4, '50% 50%')]
+    if t_link is not None: j += [S(f'#{i} .lv{q}', 0, opacity=0, scale=.4, transformOrigin='50% 50%') + T(f'#{i} .lv{q}', t_link + q * .08, opacity=1, scale=1, duration=.45, ease='back.out(2)') for q in range(2)] + [_qpop(i, 'lvp', t_link + .25, .4, '50% 50%')]
     if FOC and value: j += _numj(i, t_val if t_val is not None else a + .2, value)
     x = 60
     for k, (txt, t) in enumerate(chips[:3]):
@@ -3203,3 +3204,50 @@ def vungloi(i, a, b, area=('', '', None), n=5, t_n=None, total=('', '', None), k
     if tv: j += [_rv(f'#{i} .tt', tt - .2, 10, .4), _numc(i, 'tn', tt, tv)] + ([_rv(f'#{i} .tu', tt + .3, 10, .4)] if tu else [])
     cues = ([(at, 'tick')] if av else []) + [(t_n + k * .14, 'pop') for k in range(len(SL))] + ([(tt, 'tick')] if tv else [])
     return _out(i, a, b, 'r_vungloi', s, j), j, cues
+
+
+def dachucnang(i, a, b, items, center='', kicker='', title='', source=''):
+    """ĐA CHỨC NĂNG: bệ trung tâm vàng (center) toả tia tới 3–6 khối 3D chức năng xếp vòng, mỗi khối bật ra đúng lúc nói + nhãn.
+    items=[(kind, NHÃN, t)] · kind: 'dothi' toà nhà · 'tm' thương mại (cửa hàng mái hiên) · 'haucan' kho + xe tải · 'chebien' nhà máy ống khói · 'dulich' hồ + cây · 'dan' nhà ở"""
+    s = _qhead(i, kicker, title); j = _vis(i, a, b) + _headj(i, a, title); cues = []
+    n = min(6, len(items)); CX, CY = 360, (470 if title else 440); RX, RY = 236, 165
+    ang = [-90 + 360 * k / n for k in range(n)]
+    P = [(CX + RX * math.cos(math.radians(u)), CY + RY * math.sin(math.radians(u))) for u in ang]
+    s += ''.join(f'<path class="sp{k}" d="M{CX} {CY} L{x:.0f} {y:.0f}" stroke="{GOLD}" stroke-width="2.5" stroke-dasharray="7 7" opacity=".7"/>' for k, (x, y) in enumerate(P))
+    s += (f'<g class="cc"><ellipse cx="{CX}" cy="{CY + 10}" rx="66" ry="34" fill="hsl(40,70%,34%)"/><rect x="{CX - 66}" y="{CY - 4}" width="132" height="14" fill="hsl(40,70%,34%)"/>'
+          f'<ellipse cx="{CX}" cy="{CY - 4}" rx="66" ry="34" fill="{GOLD}"/><ellipse class="cr" cx="{CX}" cy="{CY - 4}" rx="90" ry="48" fill="none" stroke="{GOLD}" stroke-width="3" filter="url(#{i}gl)" opacity=".7"/>'
+          + (_tc(CX, CY + 3, center, 22, '#111', '', 900) if center else '') + '</g>')
+    j += [_qpop(i, 'cc', a + .1, .5, '50% 50%', 'back.out(1.8)'), T(f'#{i} .cr', a + .6, scale=1.1, opacity=.3, duration=.8, yoyo=True, repeat=max(0, int((b - a - .6) / .8) - 1), transformOrigin='50% 50%')]
+    for k, (kind, lab, t) in enumerate(items[:n]):
+        x, y = P[k]; I = _iso(x, y - 70, 7.4); g = f'<g class="it{k}">'
+        if kind == 'dulich':
+            g += _ground(I, i, 0, 0, 10, 10, 'hsl(110,42%,38%)', '', .6)
+            lk = [I(5 + 3 * math.cos(u), 4.6 + 2.2 * math.sin(u), .02) for u in [q * math.pi / 16 for q in range(33)]]
+            g += f'<polygon points="{_pt(lk)}" fill="url(#{i}wt)"/>' + ''.join(_tree(I, i, tx, ty, .75, '') for tx, ty in ((1.2, 1.4), (8.6, 1.6), (1.4, 8.4), (8.4, 8.2), (5, 8.9)))
+        else:
+            g += _ground(I, i, 0, 0, 10, 10, 'hsl(30,10%,44%)', '', .6)
+            if kind == 'dothi':
+                g += ''.join(_tower(I, i, tx, ty, 2.4, 2.4, h, '', 2, int(h), 205) for tx, ty, h in ((1, 1, 7), (5.5, 1.2, 10), (1.6, 5.6, 5), (5.8, 5.8, 8)))
+            elif kind == 'tm':
+                g += _box(I, 1.2, 2, 7.6, 6, 3.4, 'hsl(40,18%,86%)', f'url(#{i}gw)', 'hsl(205,20%,46%)')
+                g += f'<polygon points="{_pt([I(1.2, 8, 3.0), I(8.8, 8, 3.0), I(8.8, 9.4, 2.2), I(1.2, 9.4, 2.2)])}" fill="{RED}"/>'
+                g += f'<polygon points="{_pt([I(2.2, 8, 3.9), I(7.8, 8, 3.9), I(7.8, 8, 4.9), I(2.2, 8, 4.9)])}" fill="{GOLD}"/>'
+            elif kind == 'haucan':
+                g += _box(I, .8, .8, 6.4, 5.2, 3.0, 'hsl(210,10%,70%)', 'hsl(210,10%,58%)', 'hsl(210,12%,42%)')
+                g += ''.join(f'<polygon points="{_pt([I(1.6 + q * 1.7, 6.0, 0), I(2.8 + q * 1.7, 6.0, 0), I(2.8 + q * 1.7, 6.0, 1.9), I(1.6 + q * 1.7, 6.0, 1.9)])}" fill="hsl(210,12%,30%)"/>' for q in range(3))
+                g += _truck(I, 2.0, 7.4, True, 'hsl(145,50%,38%)', '').replace('<g class="">', '<g>')
+                g = g.replace('_truck', '')
+            elif kind == 'chebien':
+                g += _box(I, 1, 2.4, 7.4, 5.6, 2.6, 'hsl(30,12%,74%)', 'hsl(30,10%,60%)', 'hsl(30,10%,44%)')
+                g += ''.join(f'<polygon points="{_pt([I(1 + q * 1.85, 2.4, 2.6), I(2.85 + q * 1.85, 2.4, 2.6), I(2.85 + q * 1.85, 2.4, 3.8)])}" fill="hsl(30,12%,62%)"/>' for q in range(4))
+                cx_, cy_ = I(7.2, 1.2, 0); g += _qcyl(cx_, cy_, 8, 4, 62, 'hsl(10,30%,40%)', 'hsl(10,30%,55%)')
+                g += ''.join(f'<circle class="sm{k}_{q}" cx="{cx_ + 6 + q * 9:.0f}" cy="{cy_ - 74 - q * 14:.0f}" r="{7 + q * 3}" fill="#fff" opacity=".35"/>' for q in range(3))
+            else:
+                g += ''.join(_house(I, 1 + q * 2.9, 2.5, 2.4, 4.4, 2.6, 20 + q * 15, '') for q in range(3))
+        g += '</g>'; s += g
+        s += _qpill(x, y + 44, lab, 'rgba(244,244,245,.94)', '#111', f'lb{k}', 16)
+        j += [_qpop(i, f'it{k}', t - .2, .5, '50% 80%', 'back.out(1.8)'), _qpop(i, f'lb{k}', t, .35, '50% 50%'),
+              S(f'#{i} .sp{k}', 0, opacity=0) + T(f'#{i} .sp{k}', t - .25, opacity=.75, duration=.3)]
+        cues.append((t - .2, 'pop'))
+    s += _note(source)
+    return _out(i, a, b, 'r_dachucnang', s, j), j, cues
