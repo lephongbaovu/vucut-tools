@@ -587,7 +587,7 @@ def map_ranh(i, a, b, names=(), t_draw=None, label='', sub='', km2=False, routes
     return _sat3d(i, a, b, D, ks, t_draw, label, sub, RT, PN, center, km, [(lb, _pt(p)) for lb, p in areas], [_pick(D, x) for x in ([border] if isinstance(border, str) else border)],
                           FK=_pick(D, focus) if focus else None, TF=t_focus, RISE=rise, FSUB=focus_sub)
 
-# ---------- BẢN ĐỒ VỆ TINH 3D (P.sat(..., d3=True)) — anh duyệt mẫu Liên Sơn Lắk 26/11/2026 ----------
+# ---------- BẢN ĐỒ VỆ TINH 3D (P.sat(..., d3=True)) — anh duyệt mẫu Liên Sơn Lắk 26/11/2026 · 28/11: vùng to hơn (khung vừa 640×520, trước 570×470) ----------
 # Ảnh Google + độ cao AWS Terrain (phóng ×1.8) dựng bằng three.js → chuỗi khung DA/s3d/<mã>/NNNN.jpg (đệm theo mã, build lại không dựng lại)
 # → trình dựng (preview.mjs đã vá ở setup) lắp khung theo giây qua <img data-seq>. Mọi bản đồ đều 3D (bản 2D đã bỏ 27/11/2026); d3= chỉ giữ cho tương thích.
 S3D_HTML = r"""<!doctype html><html><head><meta charset="utf-8"><style>
@@ -658,14 +658,14 @@ function setCam(t,m,ox,oy,c=ctr,tz=TZ){const a=io(t/tz);const dist=S*m*(1.75-.45
  sc.fog.near=dist*1.15;sc.fog.far=dist*2.8;cam.far=dist*4;cam.clearViewOffset();if(ox||oy)cam.setViewOffset(W,H,ox*a,oy*a,W,H);cam.updateProjectionMatrix();
  cam.position.set(c.x+dist*Math.cos(pitch)*Math.sin(yaw),c.y+dist*Math.sin(pitch),c.z+dist*Math.cos(pitch)*Math.cos(yaw));cam.lookAt(c);cam.updateMatrixWorld();return a}
 function bb(t,m,c=ctr,PP=FP,tz=TZ){setCam(t,m,0,0,c,tz);let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;for(const v of PP){const p=v.clone().project(cam);const x=(p.x+1)/2*W,y=(1-p.y)/2*H;x0=Math.min(x0,x);x1=Math.max(x1,x);y0=Math.min(y0,y);y1=Math.max(y1,y)}return[x0,y0,x1,y1]}
-if(FP.length){const ts=D.rise?[D.rise[1],(D.rise[1]+DUR)/2,DUR-.1]:[Math.max(TZ,DUR*.35),Math.max(TZ,DUR*.65),Math.max(TZ,DUR-.1)];const big=m=>{let w=0,h=0;for(const t of ts){const q=bb(t,m);w=Math.max(w,q[2]-q[0]);h=Math.max(h,q[3]-q[1])}return Math.max(w/570,h/470)};
+if(FP.length){const ts=D.rise?[D.rise[1],(D.rise[1]+DUR)/2,DUR-.1]:[Math.max(TZ,DUR*.35),Math.max(TZ,DUR*.65),Math.max(TZ,DUR-.1)];const big=m=>{let w=0,h=0;for(const t of ts){const q=bb(t,m);w=Math.max(w,q[2]-q[0]);h=Math.max(h,q[3]-q[1])}return Math.max(w/640,h/520)};
  for(let it=0;it<40;it++){const k=big(FM);if(Math.abs(k-1)<.015)break;FM*=Math.pow(k,.85)}
- let cx=0,cy=0;for(const t of ts){const q=bb(t,FM);cx+=(q[0]+q[2])/6;cy+=(q[1]+q[3])/6}OX=cx-330;OY=cy-420}
+ let cx=0,cy=0;for(const t of ts){const q=bb(t,FM);cx+=(q[0]+q[2])/6;cy+=(q[1]+q[3])/6}OX=cx-335;OY=cy-405}
 const TZf=Math.max(1.,Math.min(2.2,(D.tf||0)+.4));const ctrF=new THREE.Vector3((D.fctr[0]-.5)*S,hAt(D.fctr[0],D.fctr[1]),(D.fctr[1]-.5)*S);let FMf=1,OXf=0,OYf=0;
 if(D.rise&&FL.length){const FPf=[];for(const o of FL)for(let k=0;k<o.pts.length;k+=3)FPf.push(new THREE.Vector3(o.pts[k],o.pts[k+1],o.pts[k+2]));const ts=[TZf,(TZf+D.rise[0])/2,D.rise[0]];
- const big=m=>{let w=0,h=0;for(const t of ts){const q=bb(t,m,ctrF,FPf,TZf);w=Math.max(w,q[2]-q[0]);h=Math.max(h,q[3]-q[1])}return Math.max(w/520,h/430)};
+ const big=m=>{let w=0,h=0;for(const t of ts){const q=bb(t,m,ctrF,FPf,TZf);w=Math.max(w,q[2]-q[0]);h=Math.max(h,q[3]-q[1])}return Math.max(w/600,h/500)};
  for(let it=0;it<40;it++){const k=big(FMf);if(Math.abs(k-1)<.015)break;FMf*=Math.pow(k,.85)}
- let cx=0,cy=0;for(const t of ts){const q=bb(t,FMf,ctrF,FPf,TZf);cx+=(q[0]+q[2])/6;cy+=(q[1]+q[3])/6}OXf=cx-330;OYf=cy-420}
+ let cx=0,cy=0;for(const t of ts){const q=bb(t,FMf,ctrF,FPf,TZf);cx+=(q[0]+q[2])/6;cy+=(q[1]+q[3])/6}OXf=cx-335;OYf=cy-410}
 const SS5=x=>{x=x<0?0:x>1?1:x;return x*x*x*(x*(6*x-15)+10)};
 function camAt(t){if(!D.rise)return setCam(t,FM,OX,OY);const[R0,R1]=D.rise;if(t<=R0)return setCam(t,FMf,OXf,OYf,ctrF,TZf);const k=SS5((t-R0)/(R1-R0));if(k>=1)return setCam(t,FM,OX,OY);
  setCam(R0,FMf,OXf,OYf,ctrF,TZf);const p1=cam.position.clone(),c1=ctrF.clone();setCam(t,FM,OX,OY);const p2=cam.position.clone(),c2=ctr.clone();
@@ -767,7 +767,7 @@ def _sat3d(i, a, b, D, ks, t_draw, label, sub, RT=(), PN=(), center=None, km=6, 
     if ks: name = label or (('TỈNH ' if ks[0] == '__tinh' else '') + D[ks[0]]['ten'].upper() if one else ' · '.join(D[k]['ten'].upper() for k in ks))
     else: name, sub = (label or sub or ''), ''
     dur = b - a; td = t_draw - a; N = int(math.ceil(dur * 30)) + 1
-    key = hashlib.md5(json.dumps([ks, round(dur, 2), round(td, 2), name, kick, sub, [(lb, ln, round(t - a, 2)) for lb, ln, t in RT], [(lb, p, round(t - a, 2)) for lb, p, t in PN], AR, BK, 'v10' + MAU['k'] + json.dumps(PAL[MAU['k']], sort_keys=True), FK, TF and round(TF - a, 2), RISE and [round(x - a, 2) for x in RISE], FSUB]).encode()).hexdigest()[:10]
+    key = hashlib.md5(json.dumps([ks, round(dur, 2), round(td, 2), name, kick, sub, [(lb, ln, round(t - a, 2)) for lb, ln, t in RT], [(lb, p, round(t - a, 2)) for lb, p, t in PN], AR, BK, 'v11' + MAU['k'] + json.dumps(PAL[MAU['k']], sort_keys=True), FK, TF and round(TF - a, 2), RISE and [round(x - a, 2) for x in RISE], FSUB]).encode()).hexdigest()[:10]
     root = DA_ or HOME; jd = os.path.join(root, 's3d', key)
     if not os.path.exists(os.path.join(jd, 'done')):
         os.makedirs(jd, exist_ok=True); print(f'  · dựng bản đồ 3D {name} ({N} khung, ~{N * .45:.0f} s)…')
@@ -860,6 +860,12 @@ def _sb_desc(n, ar, kw):
         return (f"Bản đồ vệ tinh {'3D ' if g('d3') else ''}{nm or ''}" + (f" · tên hiện: {g('label')}" if g('label') else '') + (f" · dòng phụ: {g('sub')}" if g('sub') else '')
                 + ''.join(f" · tuyến {r[0]}" for r in g('routes', ())) + ''.join(f" · ghim {p[0]}" for p in g('pins', ())))
     if n == 'cta': return 'Kêu gọi cuối: ' + ('bình luận + ' if g('hoi', None) is not None else '') + 'FOLLOW VŨ' + (' · chủ đề: ' + ', '.join(c[0] for c in g('chu', ())) if g('chu') else '')
+    if n == 'hinh' and len(ar) > 2 and callable(ar[2]):   # P.hinh(a, b, R.tên, …) → tên hình + chữ/số truyền vào
+        def fl(v):
+            if isinstance(v, (list, tuple)): return [y for x in v for y in fl(x)]
+            return [v] if isinstance(v, str) and v else []
+        txt = ' · '.join(dict.fromkeys(fl(list(ar[3:]) + [v for k, v in kw.items() if k not in ('focus',)])))
+        return f"Đồ hoạ {ar[2].__name__}" + (f": {txt}" if txt else '')
     if n == 'R':
         mk = ar[0]; s = ', '.join(f'{k}={_sb_txt(v)}' for k, v in mk.kw.items() if _sb_txt(v) and k not in ('t0', 't1'))
         pos = ', '.join(_sb_txt(x) for x in mk.ar[3:] if isinstance(x, str))
@@ -879,7 +885,7 @@ def _sb_rows(DA):
             def f(*ar, **kw):
                 if s._ns == 'R': return Mk(n, ar, kw)
                 rec.append((s._ns, n, ar, kw))
-            return f
+            f.__name__ = n; return f
     ns = {'V': Rec('V'), 'P': Rec('P'), 'C': Rec('C'), 'R': Rec('R'), 'N': Rec('R'), 'B': Rec('R'), 'X': Rec('R'), 'DL': Rec('R'), 'mg_v4': Rec('R'), 'MJ': Rec('R')}
     exec(open(os.path.join(DA, 'scenes.py'), encoding='utf-8').read(), ns)
     global WD, K, SUBS

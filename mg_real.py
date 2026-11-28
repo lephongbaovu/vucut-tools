@@ -14,6 +14,7 @@ LOGISTICS   cangcan · mangluoi · chiphi · khobai(t0,value,unit) · vantai(t0,
 CÔNG NGHIỆP nhamay · lapday · vieclam · khucn(t0,value,unit,tag) · tuabingio(t0,value,unit) · robot(t0,tag) · vatlieu(t0,items) · xuongthue(t0,value,unit) · datacenter(t0,tag) · xulynuoc(t0,tag)
 TM – DỊCH VỤ banle · cuakhau · tmdt · dulich · luutru · tienich · tttm(t0,tag) · khachsan(t0,value,unit,tag) · benhvien(t0,value,unit,tag) · truonghoc(t0,value,unit,tag)
 BỔ SUNG 26/11 vuonsr(t0,value,unit) vườn sầu riêng · vonoda(t0,src,target) vốn ODA đổ vào đường · logistics(t0,t1,left,right,up) giá trị nông sản ↔ nút thắt logistics
+BỔ SUNG 28/11 quymo(items=[(kind,value,unit,label,t)]) màn hình quy mô · dansotang(steps=[(năm,số,t)×2]) dân số tăng · cautruc(t0,nodes,axes,t_link,focus,value,chips) sơ đồ 1 hạt nhân – các cực · vungloi(area,n,t_n,total) vùng lõi + n khu ĐTM
 (đã bỏ chiso — màn hình tivi)
 Mọi số/chữ chỉ hiện khi truyền vào (lấy từ lời); value có → số lớn đếm + tiếng máy đếm tự gắn."""
 import math, random, re, json
@@ -3036,3 +3037,169 @@ def logistics(i, a, b, t0, t1, left='NÔNG SẢN', right='LOGISTICS', up='GIÁ T
          _qpop(i, 'kn', t1, .5, '50% 50%'), _qpop(i, 'rp', t1 + .2, .4, '50% 50%'),
          T(f'#{i} .kn', t1 + .6, scale=1.08, duration=.35, yoyo=True, repeat=max(0, int((b - t1 - .6) / .35) - 1), transformOrigin='50% 50%')]
     return _out(i, a, b, 'r_logistics', s, j), j, [(t0, 'riser'), (t1, 'pop')]
+
+
+# ================================================================ BỔ SUNG 28/11/2026 (video Ea Knuếc) ==
+def _tc(x, y, s, size, fill=FG, cls='', w=800, anchor='middle'): return _t(x, y, s, size, fill, anchor, cls, w)
+def _numc(i, cls, t, v, d=None): return _num(i, cls, t, v, COUNT_D if d is None else d)
+def _crowd(I, n, cx, cy, r, sc, seed=5, pref='q'):
+    random.seed(seed); P = []
+    for k in range(n):
+        rr = r * math.sqrt(random.random()); u = random.uniform(0, 2 * math.pi); P.append((cx + rr * math.cos(u), cy + rr * math.sin(u), rr))
+    P.sort(key=lambda p: p[0] + p[1]); cols = ['hsl(210,55%,45%)', 'hsl(28,80%,52%)', 'hsl(150,45%,40%)', 'hsl(356,60%,50%)', 'hsl(44,85%,55%)', 'hsl(270,35%,50%)']
+    return ''.join(_person(*I(x, y), sc, cols[k % 6], False, f'{pref}{k}') for k, (x, y, _) in enumerate(P)), sorted(range(n), key=lambda k: P[k][2])
+
+
+def quymo(i, a, b, items, kicker='QUY HOẠCH', title='', source=''):
+    """MÀN HÌNH QUY MÔ 2–3 dòng: mỗi dòng 1 khối minh hoạ 3D + số lớn đếm + đơn vị + nhãn.
+    items=[(kind, value, unit, label, t)] · kind: 'dan' đám đông · 'dat' khu đất viền vàng · 'dothi' cụm toà nhà · số/nhãn chỉ từ lời"""
+    s = _qhead(i, kicker, title); j = _vis(i, a, b) + _headj(i, a, title); cues = []
+    n = len(items[:3]); Y = [356, 488, 620][:n] if title else [290, 430, 570][:n]
+    for k, (kind, value, unit, label, t) in enumerate(items[:3]):
+        y = Y[k]; I = _iso(140, y - 96, 10.2); g = f'<g class="ic{k}">'
+        if kind == 'dan':
+            g += _ground(I, i, 0, 0, 10, 10, 'hsl(30,10%,52%)', f'g{k}', .5); cr, _o2 = _crowd(I, 9, 5, 5, 3.6, .42, 7 + k, f'p{k}_'); g += cr
+        elif kind == 'dat':
+            g += _ground(I, i, 0, 0, 10, 10, 'hsl(105,40%,36%)', f'g{k}', .5)
+            g += ''.join(f'<polygon points="{_P4(I, x0, y0, x0 + 2.8, y0 + 2.8, .02)}" fill="hsl({90 + 12 * q},42%,{40 + 4 * (q % 2)}%)"/>' for q, (x0, y0) in enumerate([(1, 1), (4.2, 1), (7, 1.2), (1, 4.3), (4.2, 4.3), (7, 4.4), (1.2, 7), (4.3, 7)]))
+            B = [I(x, y_, .05) for x, y_ in [(.4, .4), (9.6, .4), (9.6, 9.6), (.4, 9.6), (.4, .4)]]
+            g += f'<path class="bd{k}" d="M{_pt(B)}" fill="none" stroke="{GOLD}" stroke-width="3" filter="url(#{i}gl)"/>'
+            j.append(_qdraw(i, f'bd{k}', t, 4 * sum(math.dist(B[q], B[q + 1]) for q in range(4)) / 4, 1.0))
+        else:
+            g += _ground(I, i, 0, 0, 10, 10, 'hsl(30,12%,40%)', f'g{k}', .5)
+            for q, (x0, y0, h) in enumerate([(1.2, 1.2, 3.4), (4.6, 1.0, 4.8), (7.4, 1.6, 2.8), (1.4, 5.2, 2.4), (5.0, 4.8, 3.8), (7.6, 6.2, 2.0)]):
+                g += _tower(I, i, x0, y0, 2.0, 2.0, h, f'tw{k}_{q}', 2, int(h), 205 + q * 4)
+        g += '</g>'; s += g
+        j.append(_qpop(i, f'ic{k}', t - .25, .55, '50% 70%', 'back.out(1.5)'))
+        if label: s += f'<g class="lb{k}">' + _t(270, y - 84, label, 19, MUT, w=800, ls=2) + '</g>'; j.append(_rv(f'#{i} .lb{k}', t - .15, 12, .5))
+        z = int(min(88, (380 - (_w(unit, 34) + 14 if unit else 0)) / max(.1, _w(value, 1))))
+        s += _t(270, y, value, z, GOLD if k == 0 else FG, cls=f'n{k}', w=800)
+        if unit: s += f'<g class="u{k}">' + _t(270 + _w(value, z) + 14, y, unit, 34, MUT, w=700) + '</g>'; j.append(_rv(f'#{i} .u{k}', t + .3, 10, .5))
+        j.append(_numc(i, f'n{k}', t, value)); cues.append((t, 'tick'))
+        if k < n - 1: s += f'<rect class="hr{k}" x="60" y="{y + 30}" width="600" height="1.5" fill="{HAIR}"/>'; j.append(S(f'#{i} .hr{k}', 0, scaleX=0, transformOrigin='0% 50%') + T(f'#{i} .hr{k}', t + .1, scaleX=1, duration=.8, ease='expo.inOut'))
+    s += _note(source or 'số liệu theo dự thảo quy hoạch')
+    return _out(i, a, b, 'r_quymo', s, j), j, cues
+
+
+def dansotang(i, a, b, steps, unit='người', kicker='DÂN SỐ', title='Dân số dự báo', source=''):
+    """dân số tăng qua 2 mốc năm: 2 quảng trường người tí hon (mốc sau đông hơn, bệ to hơn), số đếm trên mỗi bệ, mũi tên vàng tăng trưởng.
+    steps=[(năm, số, t), (năm, số, t)] — chỉ số có trong lời"""
+    (y1, v1, t1), (y2, v2, t2) = steps[:2]
+    s = _qhead(i, kicker, title); j = _vis(i, a, b) + _headj(i, a, title); Y = 300 if title else 250
+    I1 = _iso(186, Y + 150, 13.5); I2 = _iso(504, Y + 100, 18.5)
+    s += '<g class="b1">' + _ground(I1, i, 0, 0, 10, 10, 'hsl(30,10%,46%)', 'g1', .6); c1, o1 = _crowd(I1, 18, 5, 5, 4.0, .56, 3, 'a'); s += c1 + '</g>'
+    s += '<g class="b2">' + _ground(I2, i, 0, 0, 10, 10, 'hsl(40,22%,52%)', 'g2', .6); c2, o2 = _crowd(I2, 36, 5, 5, 4.4, .72, 9, 'c'); s += c2 + '</g>'
+    s += _tc(186, Y + 66, v1, 64, FG, 'n1') + _tc(504, Y + 16, v2, 80, GOLD, 'n2')
+    s += f'<g class="un">' + _tc(186, Y + 100, unit, 22, MUT, '', 700) + '</g><g class="un2">' + _tc(504, Y + 54, unit, 24, MUT, '', 700) + '</g>'
+    s += _qpill(186, Y + 362, y1, 'rgba(244,244,245,.16)', FG, 'p1', 26) + _qpill(504, Y + 362, y2, GOLD, '#111', 'p2', 28)
+    s += _qarrow(250, Y + 318, 360, Y + 282, GOLD, 8, 'ar')
+    j += [_rv(f'#{i} .b1', a + .1, 30, .6), _qpop(i, 'p1', a + .3, .4, '50% 50%')] + [_qpop(i, f'a{k}', a + .2 + n * .02, .3) for n, k in enumerate(o1)]
+    j += [_numc(i, 'n1', t1, v1), _rv(f'#{i} .un', t1 + .3, 10, .5)]
+    j += [_rv(f'#{i} .b2', t2 - .7, 30, .6), _qpop(i, 'p2', t2 - .5, .4, '50% 50%'), S(f'#{i} .ar', 0, opacity=0, x=-40) + T(f'#{i} .ar', t2 - .6, opacity=1, x=0, duration=.6, ease='expo.out')]
+    j += [_qpop(i, f'c{k}', t2 - .6 + n * .018, .3) for n, k in enumerate(o2)] + [_numc(i, 'n2', t2, v2), _rv(f'#{i} .un2', t2 + .3, 10, .5)]
+    s += '<!--F-->'   # ghi chú nguồn: dòng phụ đề đã có, bỏ để không chồng nhãn năm
+    return _out(i, a, b, 'r_dansotang', s, j), j, [(t1, 'tick'), (t2 - .6, 'riser'), (t2, 'tick')]
+
+
+CT_POS = {'tay': (1.6, 7.3), 'hd': (2.4, 2.0), 'loi': (5.9, 5.0), 'dong': (8.8, 4.2)}   # sơ đồ: tây → đông theo trục quốc lộ (y≈5)
+def cautruc(i, a, b, t0, nodes, axes=(), t_link=None, focus=None, value='', unit='ha', t_val=None, chips=(), kicker='CẤU TRÚC ĐÔ THỊ', title='', source=''):
+    """SƠ ĐỒ 1 HẠT NHÂN – CÁC CỰC trên mặt bằng 3D: bệ hạt nhân vàng có cụm toà nhà ở giữa, các cực xanh lá nối bằng tia sáng, trục đường xuyên qua.
+    nodes=[(vị trí 'loi'|'tay'|'hd'|'dong', NHÃN, t)] · axes=[(NHÃN TRỤC, t)] (trục 1 ngang, trục 2 rẽ nam từ hạt nhân) · t_link = giây hiện mũi tên LIÊN KẾT VÙNG
+    focus = vị trí đang nói → các nút khác mờ, hiện ngay; value/unit/t_val số lớn đếm; chips=[(chức năng, t)]"""
+    FOC = focus is not None; tit = title
+    if FOC: sc, Y0 = 25, 404
+    else: sc, Y0 = 29, (306 if tit else 250)
+    I = _iso(372, Y0, sc); s = _qhead(i, kicker, tit)
+    if FOC and value: s += _numblk(value, unit, 352, 104, 36)
+    s += _ground(I, i, 0, 0, 10, 10, 'hsl(96,24%,30%)')
+    random.seed(21); fld = ''
+    for q in range(14):
+        x0, y0 = random.uniform(.2, 8.6), random.uniform(.2, 8.6)
+        if abs(y0 + .6 - 5) < 1.2: continue
+        fld += f'<polygon points="{_P4(I, x0, y0, x0 + 1.2, y0 + 1.1, .01)}" fill="hsl({80 + q * 4},{30 + q % 3 * 6}%,{30 + q % 4 * 3}%)" opacity=".8"/>'
+    s += fld + _qroadx(I, 0, 10, 5, .55, 'ax0')
+    if len(axes) > 1: s += _qroady(I, 5.4, 10, 5.9, .42, 'ax1')
+    AX = [I(.2, 5.9, .1), I(5.0, 9.6, .1)]
+    for k, (lab, t) in enumerate(axes[:2]):
+        x, y = (I(7.0, 5.0, .1) if k == 0 else I(5.9, 9.6, .1)); s += _qpill(x + (-20 if k == 0 else 92), y + (44 if k == 0 else 10), lab, 'hsl(145,55%,40%)', '#04140a', f'al{k}', 17)
+    COL = {'loi': (GOLD, 'hsl(40,80%,40%)'), 'tay': (GRN, 'hsl(145,50%,30%)'), 'hd': (GRN, 'hsl(145,50%,30%)'), 'dong': (GRN, 'hsl(145,50%,30%)')}
+    C = I(*CT_POS['loi'], .3); links = ''
+    for k, (pos, lab, t) in enumerate(nodes):
+        if pos == 'loi': continue
+        P = I(*CT_POS[pos], .3); L = math.dist(C, P)
+        links += (f'<g class="lk{k}"><path class="lg{k}" d="M{C[0]:.0f} {C[1]:.0f} L{P[0]:.0f} {P[1]:.0f}" stroke="hsl(150,90%,60%)" stroke-width="9" opacity=".3" filter="url(#{i}gl)"/>'
+                  f'<path class="ll{k}" d="M{C[0]:.0f} {C[1]:.0f} L{P[0]:.0f} {P[1]:.0f}" stroke="hsl(150,95%,75%)" stroke-width="2.5" stroke-dasharray="8 7"/></g>')
+    s += links
+    if t_link is not None:
+        for q, (x0, y0, x1, y1) in enumerate([(.9, 5, -1.6, 5), (9.1, 5, 11.6, 5), (5.9, 9.0, 5.9, 11.6)]):
+            p0, p1 = I(x0, y0, .2), I(x1, y1, .2); s += _qarrow(*p0, *p1, GOLD, 6, f'lv{q}')
+        px, py = I(10.4, 5.6, 0); s += _qpill(min(480, px - 60), py + 30, 'LIÊN KẾT VÙNG', GOLD, '#111', 'lvp', 17)
+    jn = []
+    for k, (pos, lab, t) in enumerate(nodes):
+        x, y = CT_POS[pos]; c0, c1 = COL[pos]; R = 1.25 if pos == 'loi' else .9
+        cx, cy = I(x, y, 0); rx, ry = R * sc * 1.25, R * sc * .72; h = 9 if pos == 'loi' else 7
+        g = (f'<g class="nd{k}"><ellipse class="rg{k}" cx="{cx:.0f}" cy="{cy:.0f}" rx="{rx * 1.55:.0f}" ry="{ry * 1.55:.0f}" fill="none" stroke="{c0}" stroke-width="3" opacity=".0" filter="url(#{i}gl)"/>'
+             + _qcyl(cx, cy, rx, ry, h, c1, c0) )
+        if pos == 'loi':
+            for q, (dx, dy, hh) in enumerate([(-.45, -.35, 2.6), (.15, -.5, 3.4), (-.1, .2, 2.0), (.45, .05, 2.8)]):
+                g += _tower(I, i, x + dx - .25, y + dy - .25, .5, .5, hh, '', 2, int(hh * 2), 205)
+        else:
+            for q, (dx, dy, hh) in enumerate([(-.3, -.2, 1.2), (.2, -.3, 1.7), (0, .25, .9)]):
+                g += _tower(I, i, x + dx - .2, y + dy - .2, .4, .4, hh, '', 1, int(hh * 2) + 1, 160)
+        g += '</g>'; s += g
+        lx, ly = I(x, y, 4.2 if pos == 'loi' else 2.8)
+        s += _qpill(max(110, min(600, lx)), ly - 8, lab, c0, '#111', f'np{k}', 17 if FOC and pos != focus else 19)
+        if FOC:
+            if pos == focus:
+                j0 = [_qpop(i, f'nd{k}', a + .05, .45, '50% 80%', 'back.out(1.8)'), _qpop(i, f'np{k}', a + .2, .4, '50% 50%'),
+                      S(f'#{i} .rg{k}', 0, opacity=0, scale=.6, transformOrigin='50% 50%') + T(f'#{i} .rg{k}', a + .3, opacity=.9, scale=1, duration=.6, ease='expo.out'),
+                      T(f'#{i} .rg{k}', a + .9, scale=1.12, opacity=.45, duration=.7, yoyo=True, repeat=max(0, int((b - a - .9) / .7) - 1), transformOrigin='50% 50%')]
+            else: j0 = [S(f'#{i} .nd{k}', 0, opacity=.38), S(f'#{i} .np{k}', 0, opacity=0)]
+        else:
+            j0 = [_qpop(i, f'nd{k}', t, .55, '50% 80%', 'back.out(1.8)'), _qpop(i, f'np{k}', t + .15, .4, '50% 50%')]
+            if pos != 'loi': j0.append(_qdraw(i, f'll{k}', t + .2, 400, .6) + S(f'#{i} .lg{k}', 0, opacity=0) + T(f'#{i} .lg{k}', t + .2, opacity=.3, duration=.6))
+        jn += j0
+    j = _vis(i, a, b) + _headj(i, a, tit) + [_rv(f'#{i} .gd', a + .02, 24, .5), _qfade(i, 'ax0', a + .15)] + jn
+    if FOC: j += [S(f'#{i} .lk{k}', 0, opacity=.35) for k in range(len(nodes))] + ([_qfade(i, 'ax1', a + .2)] if len(axes) > 1 else []) + [S(f'#{i} .al{k}', 0, opacity=0) for k in range(len(axes))]
+    else:
+        j += [_qpop(i, f'al{k}', t, .4, '50% 50%') for k, (_, t) in enumerate(axes[:2])] + ([_qfade(i, 'ax1', axes[1][1] - .2)] if len(axes) > 1 else [])
+    if t_link is not None: j += [S(f'#{i} .lv{q}', 0, opacity=0, scale=.4, transformOrigin='50% 50%') + T(f'#{i} .lv{q}', t_link + q * .08, opacity=1, scale=1, duration=.45, ease='back.out(2)') for q in range(3)] + [_qpop(i, 'lvp', t_link + .25, .4, '50% 50%')]
+    if FOC and value: j += _numj(i, t_val if t_val is not None else a + .2, value)
+    x = 60
+    for k, (txt, t) in enumerate(chips[:3]):
+        w = _w(txt, 17) + 28
+        if x + w > 660: x = 60
+        s += _qpill(x, 668, txt, 'rgba(61,220,132,.18)', 'hsl(145,70%,70%)', f'ch{k}', 17, 'start'); j.append(_qpop(i, f'ch{k}', t, .4, '0% 50%')); x += w + 12
+    if not chips: s += _note(source or 'sơ đồ minh hoạ theo dự thảo quy hoạch')
+    cues = [(a, 'scan')] + [(t, 'pop') for _, _, t in nodes] if not FOC else [(a + .05, 'pop')] + ([(t_val, 'tick')] if value and t_val is not None else []) + [(t, 'pop') for _, t in chips[:3]]
+    return _out(i, a, b, 'r_cautruc', s, j), j, cues
+
+
+def vungloi(i, a, b, area=('', '', None), n=5, t_n=None, total=('', '', None), kicker='QUY HOẠCH', title='Vùng lõi đô thị', source=''):
+    """VÙNG LÕI ĐÔ THỊ: mảng đất lõi viền vàng tự vẽ + số diện tích đếm (area=(số, đơn vị, t)); n khu đô thị mới đánh số nổi khối lần lượt ở t_n;
+    total=(số, đơn vị, t) tổng diện tích các khu hiện ở góc trái dưới — chỉ số có trong lời"""
+    av, au, at = area; tv, tu, tt = total; t_n = (at or a) + 1.5 if t_n is None else t_n
+    s = _qhead(i, kicker, title) + (_numblk(av, au, 352, 104, 36) if av else '')
+    sc, Y0 = 24, 404; I = _iso(380, Y0, sc)
+    s += _ground(I, i, 0, 0, 10, 10, 'hsl(96,22%,30%)')
+    blob = [I(5 + 4.1 * math.cos(u) + .5 * math.sin(3 * u), 5 + 3.7 * math.sin(u) + .4 * math.cos(2 * u), .03) for u in [q * math.pi / 30 for q in range(61)]]
+    Lb = sum(math.dist(blob[q], blob[q + 1]) for q in range(60))
+    s += (f'<polygon class="bf" points="{_pt(blob)}" fill="{GOLD}" fill-opacity=".14"/><path class="bg_" d="M{_pt(blob)}" fill="none" stroke="{GOLD}" stroke-width="10" opacity=".35" filter="url(#{i}gl)"/>'
+          f'<path class="bl" d="M{_pt(blob)}" fill="none" stroke="hsl(46,100%,78%)" stroke-width="3"/>')
+    s += _qroadx(I, 0, 10, 5, .4, 'rd')
+    SL = [(2.0, 2.4), (5.2, 1.8), (7.4, 3.4), (2.6, 6.4), (6.2, 6.6), (4.4, 4.0)][:max(1, min(6, n))]
+    for k, (x, y) in enumerate(SL):
+        g = f'<g class="k{k}">' + _box(I, x - .8, y - .7, 1.6, 1.4, .35, 'hsl(46,85%,62%)', 'hsl(42,70%,46%)', 'hsl(40,60%,36%)')
+        g += _tower(I, i, x - .5, y - .45, .45, .45, 1.6 + .3 * (k % 3), '', 1, 4, 205) + _house(I, x + .05, y - .3, .5, .7, .7, 20 + k * 12, '')
+        cx, cy = I(x, y, 2.8); g += f'<circle cx="{cx:.0f}" cy="{cy - 6:.0f}" r="17" fill="#111" stroke="{GOLD}" stroke-width="2.5"/>' + _tc(cx, cy, str(k + 1), 19, GOLD, '', 900) + '</g>'
+        s += g
+    if tv:
+        s += f'<g class="tt">' + _t(60, 622, 'TỔNG DIỆN TÍCH', 18, MUT, w=800, ls=2) + '</g>' + _t(60, 686, tv, 56, GOLD, cls='tn', w=800)
+        if tu: s += f'<g class="tu">' + _t(60 + _w(tv, 56) + 10, 686, tu, 26, MUT, w=700) + '</g>'
+    j = _vis(i, a, b) + _headj(i, a, title) + [_rv(f'#{i} .gd', a + .02, 24, .5), _qfade(i, 'rd', a + .1),
+         _qdraw(i, 'bl', (at or a + .3) - .3, Lb, 1.1), _qdraw(i, 'bg_', (at or a + .3) - .3, Lb, 1.1), _qfade(i, 'bf', (at or a + .3) + .5, .6)]
+    if av: j += _numj(i, at, av)
+    j += [_qpop(i, f'k{k}', t_n + k * .14, .5, '50% 80%', 'back.out(1.8)') for k in range(len(SL))]
+    if tv: j += [_rv(f'#{i} .tt', tt - .2, 10, .4), _numc(i, 'tn', tt, tv)] + ([_rv(f'#{i} .tu', tt + .3, 10, .4)] if tu else [])
+    cues = ([(at, 'tick')] if av else []) + [(t_n + k * .14, 'pop') for k in range(len(SL))] + ([(tt, 'tick')] if tv else [])
+    return _out(i, a, b, 'r_vungloi', s, j), j, cues
