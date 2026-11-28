@@ -37,6 +37,7 @@ def _wrap(i, name, svg, light=False):
     return (f'<div class="vc mg" data-mg="{name}" id="{i}" style="left:0;top:0;width:720px;height:1280px;z-index:8;filter:none">'
             f'<svg viewBox="0 0 720 1280" width="720" height="1280" style="position:absolute;left:0;top:0;overflow:visible">{svg}</svg></div>')
 
+NBD = []   # khoảng [a, b] các cảnh đồ hoạ có nền → vc.py bật lớp nền bản đồ thương hiệu (#nenbd) đúng các khoảng này
 BG, FG, MUT, HAIR, AC = '#0d0d0f', '#f4f4f5', 'rgba(244,244,245,.48)', 'rgba(244,244,245,.14)', 'var(--g)'
 UP, DN = '#3ddc84', '#ff5a5f'
 
@@ -87,6 +88,7 @@ def _out(i, a, b, name, s, j):
     s = re.sub(r'<ellipse class="shd"[^>]*/>', '', s)
     s = re.sub(r'<ellipse(?=[^>]*fill="#000")(?=[^>]*filter="url\(#[^)]*sf\)")(?=[^>]*rx="(?:[2-9]\d\d|1[5-9]\d)")[^>]*/>', '', s)
     j += [T(f'#{i} .ct', a, y=-8, duration=max(.1, b - a), ease='none'), S(f'#{i}bg', a, opacity=1), S(f'#{i}bg', b, opacity=0)]
+    NBD.append((a, b))
     bg = f'<div class="vc" id="{i}bg" style="left:0;top:0;width:720px;height:1280px;background:{BG};z-index:7;opacity:0;filter:none"></div>'
     return bg + _wrap(i, name, f'<g class="ct">{s}</g>', False)
 
@@ -343,9 +345,7 @@ def vang(i, a, b, t0, value, unit='tỷ đồng', kicker='', title='', note='', 
     for lv, row in enumerate(((0, 1, 2), (.5, 1.5), (1,))):
         for c in row: bars.append((lv, c))
     random.seed(2)
-    s += ''.join(f'<circle class="bk{k % 3}" cx="{random.uniform(80, 640):.0f}" cy="{random.uniform(OY - 170, OY + 60):.0f}" r="{random.uniform(8, 26):.0f}" fill="hsl(44,90%,60%)" opacity="{random.uniform(.06, .16):.2f}" filter="url(#{i}sf)"/>' for k in range(14))
-    s += (f'<ellipse cx="360" cy="{OY + 100}" rx="290" ry="58" fill="url(#{i}fl)"/><ellipse cx="360" cy="{OY + 105}" rx="170" ry="18" fill="#000" opacity=".32" filter="url(#{i}sf)"/>'
-          f'<ellipse cx="360" cy="{OY + 92}" rx="200" ry="10" fill="hsl(44,90%,60%)" opacity=".12" filter="url(#{i}sf)"/>')
+    # anh 28/11/2026: bỏ đốm vàng lem (bokeh) + vệt sáng nhoè + sàn loang dưới thỏi vàng
     for lv, c in bars:
         h = .55; x0, y0, zz = c * 1.2 - 1.8, -1.1, lv * .55
         Tq = [I(x0 + .08, y0 + .08, zz + h), I(x0 + 1.0, y0 + .08, zz + h), I(x0 + 1.0, y0 + 2.1, zz + h), I(x0 + .08, y0 + 2.1, zz + h)]

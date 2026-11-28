@@ -42,6 +42,7 @@ python3 -X utf8 ~/.vucut/tools/vc.py kiemtra ~/vucut/X  # + dựng lại dự á
 Đạt → mới đẩy lên kho.
 
 ## Nhật ký
+- **28/11/2026** — NỀN THƯƠNG HIỆU mặc định cho mọi cảnh đồ hoạ: lớp `#nenbd` (vc.py `_nen_bd`) — bản đồ Đắk Lắk dập chìm trên nền đỏ trầm, vệt vàng chạy quanh ranh giới tỉnh, chấm vàng lan sóng ở Buôn Ma Thuột + Tuy Hòa, phóng chậm; tên LE PHONG VU khắc chìm (Cinzel) ngay dưới khung người nói. Bật đúng các khoảng cảnh đồ hoạ (`mg_real.NBD`, cả `P.cta`); `P.nen(khác 'do')` hoặc `P.nenbd(False)` tắt. Hình thỏi vàng: bỏ đốm vàng lem, vệt sáng nhoè, sàn loang.
 - **28/11/2026** — Khung người nói nhỏ: bỏ chữ LE PHONG VU vàng xước + vạch vàng + lớp tối dưới đáy khung (anh Vũ yêu cầu; tên anh chuyển thành chữ khắc chìm trên nền bản đồ thương hiệu, đang duyệt).
 
 - **28/11/2026** — CTA: chừa khoảng dưới nhãn BÌNH LUẬN để dấu chữ nhũ (Ể, Ấ…) không chồng nhãn.

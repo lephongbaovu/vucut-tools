@@ -69,6 +69,53 @@ def _wm_html():   # watermark chung với realcut: tên anh Vũ, Cinzel, trôi c
                f"tl.fromTo('#wmk',{{x:-194}},{{x:194,duration:13,ease:'sine.inOut',repeat:{rx},yoyo:true}},0);"
                f"tl.fromTo('#wmk',{{y:-218}},{{y:218,duration:18.5,ease:'sine.inOut',repeat:{ry},yoyo:true}},0);")
 
+# ---------- NỀN THƯƠNG HIỆU: bản đồ Đắk Lắk dập chìm (anh Vũ duyệt 28/11/2026 — mặc định mọi cảnh đồ hoạ) ----------
+NEN_BD = {'on': True}
+def _nen_bd():   # 1 lớp SVG chung (z 7, sau mọi nền cảnh, trước watermark); bật đúng các khoảng cảnh đồ hoạ (R.NBD)
+    iv = sorted(R().NBD); mg = []
+    for a, b in iv:
+        if mg and a <= mg[-1][1] + .02: mg[-1][1] = max(mg[-1][1], b)
+        else: mg.append([a, b])
+    if not NEN_BD['on'] or not mg: V.H.append('<div id="nenbd" style="display:none"></div>'); return
+    D = json.load(open(os.path.join(VC(), 'assets', 'daklak', 'daklak.json'), encoding='utf-8'))
+    CX, CY, GOLD = 345, 830, '#E8C27A'
+    x0, y0, x1, y1 = D['bbox']['tinh']; k = 700 / (x1 - x0)
+    tx, ty = CX - (x0 + x1) / 2 * k, CY - (y0 + y1) / 2 * k
+    P = D['paths']; xf = f'translate({tx:.1f} {ty:.1f}) scale({k:.4f})'; sw = lambda w: f'{w / k:.2f}'
+    pt = lambda key: (D['pts'][key]['xy'][0] * k + tx, D['pts'][key]['xy'][1] * k + ty)
+    core = (f'<g transform="{xf}">'
+            f'<g transform="translate({sw(2)} {sw(2.4)})" fill="none" stroke="#000" stroke-opacity=".7" stroke-width="{sw(3.6)}"><path d="{P["tinh"]}"/></g>'
+            f'<g transform="translate({sw(-1)} {sw(-1.2)})" fill="none" stroke="#ff9a8a" stroke-opacity=".28" stroke-width="{sw(1.6)}"><path d="{P["tinh"]}"/></g>'
+            f'<path d="{P["tinh"]}" fill="#000" fill-opacity=".22" stroke="#3a0508" stroke-width="{sw(2.4)}"/>'
+            f'<g fill="none" stroke="#ff9a8a" stroke-opacity=".12" stroke-width="{sw(1.2)}" stroke-dasharray="{sw(3)} {sw(5)}"><path d="{P["dl_cu"]}"/></g>'
+            f'<g fill="none" stroke="#000" stroke-opacity=".4" stroke-width="{sw(1.1)}"><path d="{P["song"]}"/></g>'
+            f'<g fill="none" stroke="#ff9a8a" stroke-opacity=".10" stroke-width="{sw(1)}" stroke-dasharray="{sw(6)} {sw(4)}"><path d="{P["duong"]}"/></g>'
+            f'<g fill="none" stroke="#000" stroke-opacity=".28" stroke-width="{sw(1)}"><path d="{P["lang_gieng"]}"/></g>'
+            f'<path id="nbtr" d="{P["tinh"]}" fill="none" stroke="{GOLD}" stroke-width="{sw(2.2)}" stroke-opacity=".8" pathLength="1000" stroke-dasharray="140 860" stroke-linecap="round"/></g>')
+    dots = ''.join(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="5" fill="{GOLD}" fill-opacity=".85"/><circle cx="{x:.1f}" cy="{y:.1f}" r="12" fill="{GOLD}" fill-opacity=".12"/>'
+                   f'<circle class="nbp{n}" cx="{x:.1f}" cy="{y:.1f}" r="10" fill="none" stroke="{GOLD}" stroke-width="1.3"/>'
+                   for n, (x, y) in enumerate([pt('buonmathuot'), pt('tuyhoa')]))
+    nx, ny = 528, 916   # tên khắc chìm ngay dưới khung người nói (x 434–618, đáy y 888), phải cột phụ đề — vùng không bị che
+    nt = f'<text x="{nx}" y="{ny}" font-family="VBD,serif" font-weight="600" font-size="21" letter-spacing="6" text-anchor="middle">{WM["text"]}</text>'
+    name = (f'<g transform="translate(1.2 1.5)" fill="#000" fill-opacity=".75">{nt}</g><g transform="translate(-.6 -.7)" fill="#ffb3a6" fill-opacity=".4">{nt}</g>'
+            f'<g fill="#3a0508">{nt}</g><path d="M{nx-96} {ny+13} H{nx+96}" stroke="#000" stroke-opacity=".5" stroke-width="1.2"/>'
+            f'<path d="M{nx-96} {ny+12} H{nx+96}" stroke="#ff9a8a" stroke-opacity=".18" stroke-width=".8"/>')
+    fade = ('<radialGradient id="nbfd" cx=".78" cy=".46" r=".85"><stop offset="0" stop-color="#fff"/><stop offset=".55" stop-color="#fff" stop-opacity=".6"/>'
+            '<stop offset="1" stop-color="#fff" stop-opacity=".22"/></radialGradient><mask id="nbm"><rect width="720" height="1280" fill="url(#nbfd)"/></mask>')
+    fp = os.path.join(T_DIR, 'Cinzel-SemiBold.ttf')
+    if not os.path.exists(fp) or os.path.getsize(fp) < 30000:
+        os.makedirs(T_DIR, exist_ok=True); subprocess.run(['curl', '-sL', '-m', '120', '-o', fp, WM_URL])
+    ff = ("<style>@font-face{font-family:VBD;font-weight:600;font-display:block;src:url(data:font/ttf;base64,%s) format('truetype')}</style>"
+          % base64.b64encode(open(fp, 'rb').read()).decode()) if os.path.exists(fp) else ''
+    V.H.append(ff + '<svg id="nenbd" width="720" height="1280" viewBox="0 0 720 1280" style="position:absolute;left:0;top:0;z-index:7;opacity:0;pointer-events:none">'
+               f'<defs>{fade}</defs><g mask="url(#nbm)"><g id="nbmp">{core}{dots}</g></g>{name}</svg>')
+    T = float(V.T)
+    J = [f"tl.set('#nenbd',{{opacity:1}},{a:.2f});tl.set('#nenbd',{{opacity:0}},{b:.2f});" for a, b in mg]
+    J += [f"tl.fromTo('#nbmp',{{scale:1,svgOrigin:'{CX} {CY}'}},{{scale:1.06,svgOrigin:'{CX} {CY}',duration:16,ease:'sine.inOut',repeat:{int(T / 16) + 1},yoyo:true}},0);",
+          f"tl.fromTo('#nbtr',{{attr:{{'stroke-dashoffset':0}}}},{{attr:{{'stroke-dashoffset':{-2000 * (T + 2) / 12:.0f}}},duration:{T + 2:.1f},ease:'none'}},0);"]
+    J += [f"tl.fromTo('.nbp{n}',{{attr:{{r:8}},opacity:.9}},{{attr:{{r:40}},opacity:0,duration:1.8,ease:'sine.out',repeat:{int(T / 2.1) + 1},repeatDelay:.3}},{.2 + n * .9});" for n in range(2)]
+    V.J.append(''.join(J))
+
 # ---------- lời ----------
 def _norm(s): return s.strip(',.?!:;"“”').replace('_', ' ').lower()
 def _p(DA, cut=True): return os.path.join(DA, 'cut', 'words_cut.json') if cut else os.path.join(DA, 'words.json')
@@ -1034,8 +1081,9 @@ NEN = {   # nền cảnh đồ hoạ (P.nen) — tối giản, sang; chữ trắ
     'dem':  'radial-gradient(120% 75% at 28% 16%,#1a2633 0%,#0f1720 48%,#070a0e 100%)',
     'da':   'radial-gradient(85% 45% at 50% -4%,rgba(232,194,122,.13),rgba(232,194,122,0) 70%),radial-gradient(140% 90% at 50% 40%,#1c1c1f 0%,#121214 55%,#08080a 100%)',
 }
-def nen(ten='do'):   # P.nen('do'|'do_ruc'|'than'|'dem'|'da'|'den') đầu scenes.py — đổi nền mọi hình R.
-    R().BG = NEN.get(ten, ten)
+def nen(ten='do'):   # P.nen('do'|'do_ruc'|'than'|'dem'|'da'|'den') đầu scenes.py — đổi nền mọi hình R. (nền khác 'do' → tắt lớp bản đồ thương hiệu)
+    R().BG = NEN.get(ten, ten); NEN_BD['on'] = ten == 'do'
+def nenbd(on=True): NEN_BD['on'] = on   # P.nenbd(False) — tắt lớp bản đồ Đắk Lắk thương hiệu cho 1 video
 CTA_TEN, CTA_CHUC = 'Lê Phong Vũ', 'GĐDA · Tây Nguyên Investment'
 FOIL = ("background:linear-gradient(100deg,#7a5a24 0%,#c9a25a 14%,#f6e2a2 24%,#fff6d6 28%,#d9b468 38%,#8c6a2c 52%,#e8c983 64%,#fff1c2 70%,#b88f45 82%,#6e5020 100%);"
         "background-size:240% 100%;background-position:100% 0;-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;"
@@ -1091,6 +1139,7 @@ def cta(a, b, follow, hoi=None, chu=(), ten=CTA_TEN, chuc=CTA_CHUC, nut='Follow'
                        f'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E8C27A" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" stroke-opacity=".5"/><path d="M7.5 12.5l3 3 6-6.5"/></svg>{c}</div>' for k, (c, _) in enumerate(chu[:3]))
              + '</div></div></div>')
     tap = t1 + .75
+    R_.NBD.append((a, b))
     J += [f"tl.set('#{i}bg,#{i}',{{opacity:1}},{a:.2f});tl.set('#{i}bg,#{i}',{{opacity:0}},{b:.2f});",
           f"tl.set('#{i} .pb',{{opacity:0}},0);tl.set('#{i} .pb',{{opacity:1}},{t1 - .05:.2f});",
           f"tl.set('#{i} .k2',{{opacity:0,x:-14}},0);tl.to('#{i} .k2',{{opacity:1,x:0,duration:.5,ease:'expo.out'}},{t1:.2f});",
@@ -1254,6 +1303,7 @@ def finish():
                 fx, fy = SP['faces'][who(t)]; L = max(0, min(220, fx * 720 - 250)) * .348; Tp = max(0, min(740, fy * 1280 - 250)) * .348
                 V.J.append(f"tl.set('#pipImg',{{left:{-L:.1f},top:{-Tp:.1f}}},{max(0, t - .02):.2f});")
     json.dump([[n, a, b] for n, a, b in V.LAYOUT], open(os.path.join(DA_, 'layout.json'), 'w'))
+    _nen_bd()
     _wm_html()
     V.H.append('<style id="phude">' + font_css() + lpv_css() + CSS + ''.join(KCSS.replace('#K', '#' + k) for k in KIN) + ''.join(EXTRA) + '</style>')
     print(f'  ✓ phụ đề: {len(SUBS)} cụm · {len(WD)} từ')
