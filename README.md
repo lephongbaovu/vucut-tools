@@ -43,6 +43,7 @@ python3 -X utf8 ~/.vucut/tools/vc.py kiemtra ~/vucut/X  # + dựng lại dự á
 
 ## Nhật ký
 
+- **28/11/2026** — `cautruc` + `vungloi` vẽ lại quy mô lớn (anh yêu cầu hoành tráng hơn): mặt bằng gần kín khung, hạt nhân 9 cao ốc + cột sáng, mỗi cực 6 toà, khu thấp tầng quanh lõi, ruộng – cây – xe chạy trên quốc lộ; mỗi khu đô thị mới có cụm cao ốc + nhà phố; tổng diện tích lên góc phải trên.
 - **28/11/2026** — `cautruc`: nhãn nút đặt theo `CT_LAB` (không chồng nhau, không đè trục), bỏ mũi tên nam; thêm `dachucnang` (bệ trung tâm toả tới các khối chức năng) thay bảng liệt kê khi anh muốn đồ hoạ.
 - **28/11/2026** — Video Ea Knuếc: bản đồ 3D vùng to hơn (khung vừa 640×520, trước 570×470; cận xã 600×500); 4 hình mới trong `mg_real.py`: `quymo` (màn quy mô 2–3 chỉ số), `dansotang` (dân số 2 mốc năm), `cautruc` (sơ đồ 1 hạt nhân – các cực, chế độ `focus` từng nút), `vungloi` (vùng lõi + n khu đô thị mới + tổng diện tích); storyboard mô tả đúng tên hình dùng qua `P.hinh`.
 - **27/11/2026** — Gộp bộ máy từ skill vào `engine/`; bỏ bộ hình cũ (mg_x, mg_bds, mg_v4, mg_journey, mg_nganh, mg, mg_dl), bản đồ 2D, các kiểu chuyển cảnh cũ (wipe/whip/zoom/flash/glitch, bộ "phong cách" xoay vòng), nhạc tạo 2 lần; thêm `vc.py kiemtra` và `vc.py nhap` (bản nháp 540p). Dựng lại video M'Drắk: 31/31 khung giống hệt trước khi dọn.
